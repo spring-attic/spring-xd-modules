@@ -1,10 +1,19 @@
 Spring XD Analytics ML - PMML
 =============================
+#Introduction
+This  XD process provies support for real-time evaluation of various machine learning scoring algorithms.  It is based on the https://github.com/jpmml/jpmml-evaluator[JPMML-Evaluator] library that provides support for a wide range of https://github.com/jpmml/jpmml-evaluator#features[model types] and is interopable with models exported from http://www.r-project.org/[R], http://rattle.togaware.com/[Rattle], http://www.knime.org/[KNIME], and http://rapid-i.com/content/view/181/190/[RapidMiner].  The JPMML-Evaluator is http://www.gnu.org/licenses/agpl-3.0.html[AGPL] licenced.
 
-# Stream definition
-Create the stream definition.
-Note that you need to copy the iris-flower-classification-naive-bayes-1.pmml.xml file from the
-spring-xd-analytics-ml-pmml/src/test/resources/pmml folder to the folder {XD_HOME}/modules/processors/analytic-pmml/.
+#Build and Install
+To build clone ths repository, cd to `analytics-ml-pmml` and type `./gradlew build`
+
+The spring-xd-analytics-ml-pmml.jar file is located under the `./build/libs` directory.
+
+To install this processor into Spring XD you will need to 
+* Copy the spring-xd-analytics-ml-pmml.jar file to folder `${XD_HOME}/modules/processors/analytic-pmml/lib`
+* Copy the sample pmml files in this project under the `./src/test/resources/analytics/pmml` directory to the folder `${XD_HOME}/modules/processors/analytic-pmml/`
+
+# Creating a Stream definition
+To demonstrate the use of this module, we will use the iris-flower-classification-naive-bayes-1.pmml.xml file.  
 
 ```
 stream create
