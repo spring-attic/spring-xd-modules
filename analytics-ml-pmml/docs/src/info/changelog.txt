@@ -1,0 +1,6 @@
+Spring XD Analytics ML - PMML Support
+=====================================
+https://github.com/spring-projects/spring-xd-modules
+
+Changes in version 1.0.0.M1
+---------------------------
