@@ -2,56 +2,33 @@ Spring XD Analytics ML - PMML
 =============================
 
 == Introduction
-This  XD process provies support for real-time evaluation of various machine learning scoring algorithms.
+This  XD processor provides support for real-time evaluation of various machine learning scoring algorithms.
 It is based on the https://github.com/jpmml/jpmml-evaluator[JPMML-Evaluator] library that provides support for a wide range of https://github.com/jpmml/jpmml-evaluator#features[model types] and is interopable with models exported from http://www.r-project.org/[R], http://rattle.togaware.com/[Rattle], http://www.knime.org/[KNIME], and http://rapid-i.com/content/view/181/190/[RapidMiner].  The JPMML-Evaluator is http://www.gnu.org/licenses/agpl-3.0.html[AGPL] licenced.
 
 == Build and Install
-To build clone ths repository, cd to `analytics-ml-pmml` and type `./gradlew build`
-
-The spring-xd-analytics-ml-pmml.jar file is located under the `./build/libs` directory.
+To build, clone this repository, cd to `analytics-ml-pmml` and type `./gradlew build xdModule`
 
 To install this processor into Spring XD you will need to 
 
-* Copy the spring-xd-analytics-ml-pmml.jar file to folder `${XD_HOME}/modules/processors/analytic-pmml/lib`
-* Copy the sample pmml files in this project under the `./src/test/resources/analytics/pmml` directory to the folder `${XD_HOME}/modules/processors/analytic-pmml/`
-
-== Creating a Stream definition
-To demonstrate the use of this module, we will use the iris-flower-classification-naive-bayes-1.pmml.xml file.  
-
 ```
-stream create
---name iris-flow-classification
---definition "
-    http
-    --outputType=application/x-xd-tuple |
-    analytic-pmml
-    --name='iris-flower-classification-naive-bayes-1'
-    --inputFieldMapping='sepalLength:Sepal.Length,sepalWidth:Sepal.Width,petalLength:Petal.Length,petalWidth:Petal.Width'
-    --outputFieldMapping='Predicted_Species:predictedSpecies' |
-    log
-    "
+cp -R build/modules/processor/analytic-pmml ${XD_HOME}/modules/processor
 ```
 
-== Input
-Post some data to the stream:
+== Module usage
+For an example of the module usage, see 
 
+This module supports the following options at the time of writing:
 ```
-http post --target http://localhost:9000 --contentType application/json --data "{ \"sepalLength\": 6.4, \"sepalWidth\": 3.2, \"petalLength\":4.5, \"petalWidth\":1.5 }"
+xd:>module info --name processor:analytic-pmml
+Information about processor module 'analytic-pmml':
+
+  Option Name         Description                                            Default  Type
+  ------------------  -----------------------------------------------------  -------  --------
+  inputFieldMapping   mapping of input tuple fields to model input fields    <none>   String
+  location            the location of the PMML xml file                      <none>   String
+  modelName           the name of the model to use, from the PMML document   <none>   String
+  outputFieldMapping  mapping of model output fields to output fields        <none>   String
+  outputType          how this module should emit messages it produces       <none>   MimeType
+  inputType           how this module should interpret messages it consumes  <none>   MimeType
 ```
 
-== Ouptut
-See the output in the log, note the generated field: "predictedSpecies":
-
-```json
-Output:
-4/03/22 17:46:20 WARN logger.iris-flow-classification:
-{
-	"id":"7eeee430-b1e1-11e3-b13d-28cfe918b323"
-	,"timestamp":1395506780659
-	,"sepalLength":"6.4"
-	,"sepalWidth":"3.2"
-	,"petalLength":"4.5"
-	,"petalWidth":"1.5"
-	,"predictedSpecies":"versicolor"
-}
-```
