@@ -34,7 +34,7 @@ import org.springframework.xd.analytics.ml.OutputMapper;
 
 /**
  * A {@link org.springframework.xd.analytics.ml.MappedAnalytic} that can evaluate {@link org.dmg.pmml.PMML} models.
- *
+ * 
  * @author Thomas Darimont
  */
 public class PmmlAnalytic<I, O> extends
@@ -52,38 +52,35 @@ public class PmmlAnalytic<I, O> extends
 
 	/**
 	 * Creates a new {@link PmmlAnalytic}.
-	 *
+	 * 
 	 * @param modelName may be {@literal null}
 	 * @param modelLocation must not be {@literal null}
 	 * @param inputMapper must not be {@literal null}
 	 * @param outputMapper must not be {@literal null}
 	 */
-	public PmmlAnalytic(String modelName,
-						String modelLocation,
-						InputMapper<I, PmmlAnalytic<I, O>, Map<FieldName, Object>> inputMapper,
-						OutputMapper<I, O, PmmlAnalytic<I, O>, Map<FieldName, Object>> outputMapper) {
+	public PmmlAnalytic(String modelName, String modelLocation,
+			InputMapper<I, PmmlAnalytic<I, O>, Map<FieldName, Object>> inputMapper,
+			OutputMapper<I, O, PmmlAnalytic<I, O>, Map<FieldName, Object>> outputMapper) {
 		this(modelName, modelLocation, new ResourcePmmlLoader(), inputMapper, outputMapper);
 	}
 
 	/**
 	 * Creates a new {@link PmmlAnalytic}.
-	 *
+	 * 
 	 * @param modelName may be {@literal null}
 	 * @param modelLocation must not be {@literal null}
 	 * @param pmmlLoader may be {@literal null}
 	 * @param inputMapper must not be {@literal null}
 	 * @param outputMapper must not be {@literal null}
 	 */
-	public PmmlAnalytic(String modelName,
-						String modelLocation,
-						PmmlLoader pmmlLoader,
-						InputMapper<I, PmmlAnalytic<I, O>, Map<FieldName, Object>> inputMapper,
-						OutputMapper<I, O, PmmlAnalytic<I, O>, Map<FieldName, Object>> outputMapper) {
+	public PmmlAnalytic(String modelName, String modelLocation, PmmlLoader pmmlLoader,
+			InputMapper<I, PmmlAnalytic<I, O>, Map<FieldName, Object>> inputMapper,
+			OutputMapper<I, O, PmmlAnalytic<I, O>, Map<FieldName, Object>> outputMapper) {
 
 		super(inputMapper, outputMapper);
 
 		Assert.notNull(modelLocation, "modelLocation");
-		Assert.notNull(pmmlLoader,"pmmlLoader");
+		Assert.notNull(pmmlLoader, "pmmlLoader");
 
 		this.modelName = StringUtils.trimAllWhitespace(modelName);
 		this.modelLocation = StringUtils.trimAllWhitespace(modelLocation);
@@ -94,22 +91,23 @@ public class PmmlAnalytic<I, O> extends
 		this.pmmlEvaluator = createModelEvaluator(pmml, modelName);
 
 		if (log.isDebugEnabled()) {
-			log.debug(String.format("PmmlAnalytic created for model with modelName: %s and modelLocation: %s",modelName, modelLocation));
+			log.debug(String.format("PmmlAnalytic created for model with modelName: %s and modelLocation: %s",
+					modelName, modelLocation));
 		}
 	}
 
 	/**
 	 * Creates the {@link org.jpmml.evaluator.Evaluator} that should be used to evaluate the selected model.
-	 *
+	 * 
 	 * @return
 	 */
 	protected Evaluator createModelEvaluator(PMML pmml, String modelName) {
-		return (Evaluator) ModelEvaluatorFactory.getInstance().getModelManager(pmml, getModel(modelName));
+		return ModelEvaluatorFactory.getInstance().getModelManager(pmml, getModel(modelName));
 	}
 
 	/**
 	 * Evaluates the given {@code modelInput} with the analytic provided by {@link PMML} definition.
-	 *
+	 * 
 	 * @param modelInput must not be {@literal null}
 	 * @return
 	 */
@@ -134,23 +132,23 @@ public class PmmlAnalytic<I, O> extends
 
 	/**
 	 * Returns the {@link org.dmg.pmml.Model} for the given {@code modelName}.
-	 *
+	 * 
 	 * @param modelName may be {@literal null}
 	 * @return
 	 */
-	Model getModel(String modelName){
+	Model getModel(String modelName) {
 
-		//if no model name given try returning default name
+		// if no model name given try returning default name
 		if (!StringUtils.hasText(modelName)) {
 			return getDefaultModel();
 		}
 
 		if (!this.pmml.getModels().isEmpty()) {
 
-			//look for a model with the given name
+			// look for a model with the given name
 			for (Model model : this.pmml.getModels()) {
 
-				if(model.getModelName() == null){
+				if (model.getModelName() == null) {
 					continue;
 				}
 
@@ -164,9 +162,9 @@ public class PmmlAnalytic<I, O> extends
 	}
 
 	/**
-	 * Returns the corresponding {@link org.dmg.pmml.Model} for the configured {@code modelName}.
-	 * If no modelName is configured the default model from {@link #getDefaultModel()} is returned.
-	 *
+	 * Returns the corresponding {@link org.dmg.pmml.Model} for the configured {@code modelName}. If no modelName is
+	 * configured the default model from {@link #getDefaultModel()} is returned.
+	 * 
 	 * @return
 	 */
 	Model getSelectedModel() {
@@ -175,17 +173,18 @@ public class PmmlAnalytic<I, O> extends
 
 	/**
 	 * Returns the default {@link org.dmg.pmml.Model} of the wrapped {@link PMML} object. According to the PMML
-	 * specification, this is the first {@code Model} in the {@code PMML} structure. Every {@code PMML} model contain at
-	 * least one {@code Model}.
-	 *
+	 * specification, this is the first {@code Model} in the {@code PMML} structure. Every {@code PMML} model contains
+	 * at least one {@code Model}.
+	 * 
 	 * @return
 	 */
 	Model getDefaultModel() {
 
 		List<Model> models = this.pmml.getModels();
 
-		if(models.isEmpty()){
-			throw new IllegalStateException(String.format("PMML document doesn't contain any model in modelLocation: %s ", this.modelLocation));
+		if (models.isEmpty()) {
+			throw new IllegalStateException(String.format(
+					"PMML document doesn't contain any model in modelLocation: %s ", this.modelLocation));
 		}
 
 		return models.get(0);
@@ -193,7 +192,7 @@ public class PmmlAnalytic<I, O> extends
 
 	/**
 	 * Returns the {@link org.jpmml.evaluator.Evaluator} that should be use to evaluate the current model.
-	 *
+	 * 
 	 * @return
 	 */
 	public Evaluator getPmmlEvaluator() {
@@ -202,7 +201,7 @@ public class PmmlAnalytic<I, O> extends
 
 	/**
 	 * Returns the configured {@code modelLocation}.
-	 *
+	 * 
 	 * @return
 	 */
 	public String getModelLocation() {
