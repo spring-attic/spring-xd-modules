@@ -17,17 +17,6 @@ group = 'org.springframework.xd'
 ext {
     moduleType = 'processor'
     moduleName = 'analytic-pmml'
-
-    springVersion = '4.0.3.RELEASE'
-    jpmmlEvaluatorVersion = '1.1.2'
-    springXDVersion = '1.0.0.BUILD-SNAPSHOT'
-    log4jVersion = '1.2.17'
-    slf4jVersion = '1.7.6'
-    junitVersion = '4.11'
-    mockitoVersion = '1.9.5'
-    hamcrestVersion = '1.3'
-
-    jacksonVersion = '2.3.2'
 }
 
 
