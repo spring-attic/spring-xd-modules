@@ -142,7 +142,37 @@ task docsZip(type: Zip) {
 
 }
 
-task distZip(type: Zip, dependsOn: [jar, docsZip, sourcesJar, javadocJar]) {
+task xdModule(type: Copy, dependsOn: build) {
+    def containerDeps = configurations.dirt
+    def moduleRuntime = configurations.runtime.minus(containerDeps)
+    def moduleDir = project.file("${buildDir}/modules/${moduleType}/${moduleName}")
+    inputs.property('deps', moduleRuntime)
+    outputs.dir "${moduleDir}/lib"
+
+    into moduleDir 
+    from(moduleRuntime) {
+        into "lib"
+    }
+    from(jar) {
+        into "lib"
+    }
+    from ("modules/${moduleType}/${moduleName}/config") {
+        into "config"
+    }
+}
+
+task xdModuleZip(type: Zip, dependsOn: xdModule) {
+    group = 'Distribution'
+    classifier = 'xdmodule'
+    description = "Builds -${classifier} archive, containing an XD module"
+
+    into("${moduleType}/${moduleName}") {
+        from(xdModule)
+    }
+
+}
+
+task distZip(type: Zip, dependsOn: [jar, docsZip, sourcesJar, javadocJar, xdModuleZip]) {
     group = 'Distribution'
     classifier = 'dist'
     description = "Builds -${classifier} archive, containing all jars and docs, " +
@@ -164,29 +194,9 @@ task distZip(type: Zip, dependsOn: [jar, docsZip, sourcesJar, javadocJar]) {
 
         into ("dist") {
             from rootProject.collect { project -> project.libsDir }
+            from xdModuleZip
         }
     }
-}
-
-task xdModule(type: Copy, dependsOn: jar) {
-    def containerDeps = configurations.dirt
-    def moduleRuntime = configurations.runtime.minus(containerDeps)
-    def moduleDir = project.file("${buildDir}/modules/${moduleType}/${moduleName}")
-    inputs.property('deps', moduleRuntime)
-    outputs.dir "${moduleDir}/lib"
-
-    into moduleDir 
-    from(moduleRuntime) {
-        into "lib"
-    }
-    from(jar) {
-        into "lib"
-    }
-    from ("modules/${moduleType}/${moduleName}/config") {
-        into "config"
-    }
-
-
 }
 
 tasks.withType(Test) {
