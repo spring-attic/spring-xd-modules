@@ -168,7 +168,7 @@ task xdModuleZip(type: Zip, dependsOn: xdModule) {
     description = "Builds -${classifier} archive, containing an XD module"
 
     into("${moduleType}/${moduleName}") {
-        from(xdModule)
+        from(xdModule.destinationDir)
     }
 
 }
