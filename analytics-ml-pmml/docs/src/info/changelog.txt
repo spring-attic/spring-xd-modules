@@ -2,6 +2,11 @@ Spring XD Analytics ML - PMML Support
 =====================================
 https://github.com/spring-projects/spring-xd-modules
 
+Changes in version 1.0.0.M2 (2014-04-16)
+----------------------------------------
+* We now generate proper maven pom information.
+* Added a dedicated xdmodule.zip for distribution.
+
 Changes in version 1.0.0.M1 (2014-04-16)
 ----------------------------------------
 * [XD-1420] - Create a JPMML module that will evaluate a model.
