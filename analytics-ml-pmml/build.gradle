@@ -30,6 +30,7 @@ apply plugin: "java"
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'javadocHotfix'
+apply from: "$rootDir/maven.gradle"
 
 [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:-serial"]
 [compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:-serial", "-Xlint:deprecation"]
@@ -213,6 +214,7 @@ artifacts {
 
     archives docsZip
     archives distZip
+    archives xdModuleZip
 }
 
 task wrapper(type: Wrapper) {
