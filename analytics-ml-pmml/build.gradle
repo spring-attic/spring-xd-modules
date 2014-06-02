@@ -50,8 +50,8 @@ dependencies {
     compile "org.springframework.xd:spring-xd-module-spi:$springXDVersion"
 
     runtime "log4j:log4j:$log4jVersion"
-	runtime	"org.slf4j:jcl-over-slf4j:$slf4jVersion"
-	runtime	"org.slf4j:slf4j-log4j12:$slf4jVersion"
+    runtime "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+    runtime "org.slf4j:slf4j-log4j12:$slf4jVersion"
 
     dirt "org.springframework.xd:spring-xd-dirt:$springXDVersion"
 
@@ -151,8 +151,11 @@ task xdModule(type: Copy, dependsOn: build) {
     outputs.dir "${moduleDir}/lib"
 
     into moduleDir 
+
     from(moduleRuntime) {
         into "lib"
+	exclude "jackson*.jar", "jcl*.jar", "joda*.jar", "slf4j*.jar", "spring-jdbc*.jar", "spring-web*.jar"
+	
     }
     from(jar) {
         into "lib"
