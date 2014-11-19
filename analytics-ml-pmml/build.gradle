@@ -21,7 +21,7 @@ ext {
 
 
 repositories {
-  maven { url "http://repo.spring.io/libs-release" }
+  maven { url "http://repo.spring.io/libs-milestone" }
   maven { url "http://repo.spring.io/plugins-release" }
   mavenCentral()
 }
@@ -154,7 +154,7 @@ task xdModule(type: Copy, dependsOn: build) {
 
     from(moduleRuntime) {
         into "lib"
-	exclude "jackson*.jar", "jcl*.jar", "joda*.jar", "slf4j*.jar", "spring-*4.0.6*.jar"
+	exclude "jackson*.jar", "jcl*.jar", "joda*.jar", "slf4j*.jar", "spring-batch-infra*.jar", "spring-integration-core*.jar", "spring-messaging*.jar", "spring-*4.0.6*.jar"
 	
     }
     from(jar) {
