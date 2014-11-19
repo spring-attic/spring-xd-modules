@@ -154,7 +154,7 @@ task xdModule(type: Copy, dependsOn: build) {
 
     from(moduleRuntime) {
         into "lib"
-	exclude "jackson*.jar", "jcl*.jar", "joda*.jar", "slf4j*.jar", "spring-jdbc*.jar", "spring-web*.jar"
+	exclude "jackson*.jar", "jcl*.jar", "joda*.jar", "slf4j*.jar", "spring-*4.0.6*.jar"
 	
     }
     from(jar) {
