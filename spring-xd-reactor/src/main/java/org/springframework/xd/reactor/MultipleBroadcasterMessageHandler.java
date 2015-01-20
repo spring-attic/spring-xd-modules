@@ -48,9 +48,9 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Adapts the item at a time delivery of a {@link org.springframework.messaging.MessageHandler}
- * by delegating processing to an Stream based on a partitionExpression.
+ * by delegating processing to a Stream based on a partitionExpression.
  *
- * The specific Stream that the message is delegated is determined by the partitionExpression value.
+ * The specific Stream that the message is delegated to is determined by the partitionExpression value.
  * Unless you change the scheduling of the inputStream in your processor, you should ensure that the
  * partitionExpression does not map messages delivered on different message bus dispatcher threads to the same
  * stream. This is due to the underlying use of a <code>Broadcaster</code>.
@@ -62,7 +62,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * If the Stream mapped to the partitionExpression value has an error or completes, it will be recreated when the
  * next message consumed maps to the same partitionExpression value.
- * source
+ *
  * All error handling is the responsibility of the processor implementation.
  *
  * @author Mark Pollack

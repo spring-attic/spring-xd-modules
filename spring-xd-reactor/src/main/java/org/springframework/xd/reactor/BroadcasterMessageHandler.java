@@ -37,12 +37,32 @@ import java.lang.SuppressWarnings;
 import java.lang.reflect.Method;
 
 /**
- * A handler that adapts item at a time delivery in a
- * {@link org.springframework.messaging.MessageHandler}
- * and delegates processing to a Reactor Stream with synchronous dispatch  so that processing
- * occurs on the same thread that invokes the handler.
+ * Adapts the item at a time delivery of a {@link org.springframework.messaging.MessageHandler}
+ * by delegating processing to a {@link Stream}
  *
- * The output stream of the processor is consumed and sent to the output channel.
+ * The outputStream of the processor is used to create a message and send it to the output channel. If the
+ * input channel and output channel are connected to the MessageBus, then data delivered to the input stream via
+ * a call to onNext is invoked on the dispatcher thread of the message bus and sending a message to the output
+ * channel will involve IO operations on the message bus.
+ *
+ * The implementation uses a {@link reactor.rx.action.broadcast.SerializedBroadcaster} with synchronous dispatch.
+ * This has the advantage that the state of the Stream can be shared across all the incoming dispatcher threads that
+ * are invoking onNext. It has the disadvantage that processing and sending to the output channel will execute serially
+ * on one of the dispatcher threads.
+ *
+ * The use of this handler makes for a very natural first experience when processing data. For example given
+ * the stream <code></code>http | reactor-processor | log</code> where the <code>reactor-processor</code> does does a
+ * <code>buffer(5)</code> and then produces a single value. Sending 10 messages to the http source will
+ * result in 2 messages in the log, no matter how many dispatcher threads are used.
+ *
+ * You can modify what thread the outputStream subscriber, which does the send to the output channel,
+ * will use by explicitly calling <code>observeOn</code> before returning the outputStream from your processor.
+ *
+ * Use {@link org.springframework.xd.reactor.MultipleBroadcasterMessageHandler} for concurrent execution on dispatcher
+ * threads spread across across multiple Observables.
+ *
+ * All error handling is the responsibility of the processor implementation.
+ *
  *
  * @author Mark Pollack
  */
@@ -93,10 +113,8 @@ public class BroadcasterMessageHandler extends AbstractMessageProducingHandler {
                 if (ClassUtils.isAssignable(Message.class, outputObject.getClass())) {
                     getOutputChannel().send((Message) outputObject);
                 } else {
-                    //TODO handle copy of header values when possible
                     getOutputChannel().send(MessageBuilder.withPayload(outputObject).build());
                 }
-                //TODO handle Void
             }
         });
 
