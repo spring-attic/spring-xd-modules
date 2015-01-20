@@ -1,0 +1,36 @@
+Spring XD Analytics ML - PMML
+=============================
+
+== Introduction
+This  XD processor provides support for real-time evaluation of various machine learning scoring algorithms.
+It is based on the https://github.com/jpmml/jpmml-evaluator[JPMML-Evaluator] library that provides support for a wide range of https://github.com/jpmml/jpmml-evaluator#features[model types] and is interoperable with models exported from http://www.r-project.org/[R], http://rattle.togaware.com/[Rattle], http://www.knime.org/[KNIME], and http://rapid-i.com/content/view/181/190/[RapidMiner].  The JPMML-Evaluator is http://www.gnu.org/licenses/agpl-3.0.html[AGPL] licenced.
+
+== Build and Install
+To build, clone this repository. Then switch to the tag that corresponds to the version of Spring XD you are using.  For example `git checkout tags/v1.0.2.RELEASE` or `git checkout tags/v1.1.0.M1`.  Then cd to `analytics-ml-pmml` and type `./gradlew clean build xdModule`
+
+To install this processor into Spring XD you will need to 
+
+```
+cp -R build/modules/processor/analytic-pmml ${XD_HOME}/modules/processor
+```
+
+== Module usage
+For an example of the module usage, see 
+
+This module supports the following options at the time of writing:
+```
+xd:>module info --name processor:analytic-pmml
+Information about processor module 'analytic-pmml':
+
+  Option Name         Description                                            Default  Type
+  ------------------  -----------------------------------------------------  -------  --------
+  inputFieldMapping   mapping of input tuple fields to model input fields    <none>   String
+  location            the location of the PMML xml file                      <none>   String
+  modelName           the name of the model to use, from the PMML document   <none>   String
+  outputFieldMapping  mapping of model output fields to output fields        <none>   String
+  outputType          how this module should emit messages it produces       <none>   MimeType
+  inputType           how this module should interpret messages it consumes  <none>   MimeType
+```
+
+== Usage example
+For an usage example please have a look at the https://github.com/spring-projects/spring-xd-samples/tree/master/analytics-pmml[analytics-pmml] sample project in the https://github.com/spring-projects/spring-xd-samples[spring-xd-samples] github repository.
