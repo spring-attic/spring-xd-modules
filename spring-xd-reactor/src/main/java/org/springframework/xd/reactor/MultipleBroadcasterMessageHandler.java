@@ -33,12 +33,10 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import reactor.Environment;
 import reactor.fn.Consumer;
-
-import reactor.rx.Control;
 import reactor.rx.Stream;
-import reactor.rx.Streams;
-import reactor.rx.action.Broadcaster;
-
+import reactor.rx.action.Control;
+import reactor.rx.broadcast.Broadcaster;
+import reactor.rx.broadcast.SerializedBroadcaster;
 
 import java.lang.reflect.Method;
 import java.util.Hashtable;
@@ -49,20 +47,20 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Adapts the item at a time delivery of a {@link org.springframework.messaging.MessageHandler}
  * by delegating processing to a Stream based on a partitionExpression.
- *
+ * <p/>
  * The specific Stream that the message is delegated to is determined by the partitionExpression value.
  * Unless you change the scheduling of the inputStream in your processor, you should ensure that the
  * partitionExpression does not map messages delivered on different message bus dispatcher threads to the same
  * stream. This is due to the underlying use of a <code>Broadcaster</code>.
- *
+ * <p/>
  * For example, using the expression <code>T(java.lang.Thread).currentThread().getId()</code> would map the current
  * dispatcher thread id to an instance of a Stream. If you wanted to have a Stream per
  * Kafka partition, you can use the expression <code>header['kafka_partition_id']</code> since the MessageBus
  * dispatcher thread will be the same for each partition.
- *
+ * <p/>
  * If the Stream mapped to the partitionExpression value has an error or completes, it will be recreated when the
  * next message consumed maps to the same partitionExpression value.
- *
+ * <p/>
  * All error handling is the responsibility of the processor implementation.
  *
  * @author Mark Pollack
@@ -136,7 +134,7 @@ public class MultipleBroadcasterMessageHandler extends AbstractMessageProducingH
         }
         Broadcaster<Object> broadcaster = broadcasterMap.get(idToUse);
         if (broadcaster == null) {
-            Broadcaster<Object> existingBroadcaster = broadcasterMap.putIfAbsent(idToUse, Streams.broadcast());
+            Broadcaster<Object> existingBroadcaster = broadcasterMap.putIfAbsent(idToUse, SerializedBroadcaster.create());
             if (existingBroadcaster == null) {
                 broadcaster = broadcasterMap.get(idToUse);
                 //user defined stream processing
@@ -169,10 +167,7 @@ public class MultipleBroadcasterMessageHandler extends AbstractMessageProducingH
                     }
                 });
 
-
                 controlsMap.put(idToUse, control);
-
-
 
                 if (logger.isDebugEnabled()) {
                     logger.debug(control.debug());
