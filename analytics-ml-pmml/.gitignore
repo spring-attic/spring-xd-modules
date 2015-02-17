@@ -17,3 +17,4 @@ pom.xml
 .settings
 .idea
 out
+lib
