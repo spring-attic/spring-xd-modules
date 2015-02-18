@@ -1,229 +1,47 @@
-description = 'Spring XD Analytics ML - PMML Support'
 
+description = 'Spring XD Analytics ML - PMML Support'
 
 buildscript {
     repositories {
-        maven { url 'http://repo.spring.io/plugins-release' }
+        maven { url "http://repo.spring.io/plugins-snapshot" }
+        maven { url "http://repo.spring.io/release" }
+        jcenter()
+        maven { url "http://repo.spring.io/snapshot" }
+        maven { url "http://repo.spring.io/milestone" }
     }
     dependencies {
-        classpath 'org.springframework.build.gradle:bundlor-plugin:0.1.2'
-        classpath 'org.springframework.build.gradle:docbook-reference-plugin:0.2.4'
-        classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
+        classpath("org.springframework.xd:spring-xd-module-plugin:${springXDVersion}")
     }
+}
+
+ext {
+    springXdVersion = '1.1.0.RELEASE'
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'spring-xd-module'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.12'
 }
 
 group = 'org.springframework.xd'
-
-ext {
-    moduleType = 'processor'
-    moduleName = 'analytic-pmml'
-}
-
-
-repositories {
-  maven { url "http://repo.spring.io/libs-milestone" }
-  maven { url "http://repo.spring.io/plugins-release" }
-  mavenCentral()
-}
-
-apply plugin: "java"
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-apply plugin: 'javadocHotfix'
-apply from: "$rootDir/maven.gradle"
-
-[compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:-serial"]
-[compileJava, compileTestJava]*.options*.compilerArgs = ["-Xlint:-serial", "-Xlint:deprecation"]
-
-configurations {
-    dirt {}
-}
-
-// Common dependencies
-dependencies {
-    // Logging
-    compile "org.jpmml:pmml-evaluator:$jpmmlEvaluatorVersion"
-    compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
-    compile "org.springframework:spring-core:$springVersion"
-    compile "org.springframework.xd:spring-xd-tuple:$springXDVersion"
-    compile "org.springframework.xd:spring-xd-analytics-ml:$springXDVersion"
-    compile "org.springframework.xd:spring-xd-module-spi:$springXDVersion"
-
-    runtime "log4j:log4j:$log4jVersion"
-    runtime "org.slf4j:jcl-over-slf4j:$slf4jVersion"
-    runtime "org.slf4j:slf4j-log4j12:$slf4jVersion"
-
-    dirt "org.springframework.xd:spring-xd-dirt:$springXDVersion"
-
-    // Testing
-    testCompile "junit:junit:$junitVersion"
-    testCompile "org.springframework:spring-test:$springVersion"
-    testCompile "org.mockito:mockito-core:$mockitoVersion"
-    testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
-
-}
-
-configurations {
-    runtime {
-        resolutionStrategy {
-            // The following is not strictly necessary but allows to align this
-            // module's and DIRT version of jars (thus removing them from the module lib/)
-            force   "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-
-        }
-    }
-}
+version = '1.2.0.BUILD-SNAPSHOT'
 
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-javadoc {
-  ext.srcDir = file("${projectDir}/docs/src/api")
-  destinationDir = file("${buildDir}/api")
-  ext.tmpDir = file("${buildDir}/api-work")
-
-  configure(options) {
-      stylesheetFile = file("${srcDir}/spring-javadoc.css")
-      overview = "${srcDir}/overview.html"
-      docFilesSubDirs = true
-      outputLevel = org.gradle.external.javadoc.JavadocOutputLevel.QUIET
-      breakIterator = true
-      showFromProtected()
-      links = [
-        "http://static.springframework.org/spring/docs/3.1.x/javadoc-api",
-        "http://download.oracle.com/javase/6/docs/api",
-      ]
-
-      exclude "org/springframework/data/redis/config/**"
-  }
-
-  title = "${rootProject.description} ${version} API"
+repositories {
+    maven { url "http://repo.spring.io/release" }
+    jcenter()
+    maven { url "http://repo.spring.io/snapshot" }
+    maven { url "http://repo.spring.io/milestone" } 
 }
 
-jar {
-    manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
-    manifest.attributes['Implementation-Title'] = 'spring-xd-analytics-ml-pmml'
-    manifest.attributes['Implementation-Version'] = project.version
-    manifest.attributes['Implementation-URL'] = "https://github.com/spring-projects/spring-xd-modules/analytics-ml-pmml"
-    manifest.attributes['Implementation-Vendor'] = "Pivotal Software, Inc."
-    manifest.attributes['Implementation-Vendor-Id'] = "org.springframework"
-
-    from("$rootDir/docs/src/info") {
-        include "license.txt"
-        include "notice.txt"
-        include "changelog.txt"
-        into "META-INF"
-        expand(copyright: new Date().format('2014-yyyy'), version: project.version)
-    }
+dependencies {
+    compile "org.jpmml:pmml-evaluator:${jpmmlEvaluatorVersion}"
+    compile "org.springframework.xd:spring-xd-analytics-ml:${springXDVersion}"
 }
-
-task sourcesJar(type: Jar, dependsOn:classes) {
-    classifier = 'sources'
-    from sourceSets.main.allJava
-}
-
-task javadocJar(type: Jar) {
-    classifier = 'javadoc'
-    from javadoc
-}
-
-task docsZip(type: Zip) {
-    group = 'Distribution'
-    classifier = 'docs'
-    description = "Builds -${classifier} archive containing api and reference for deployment"
-
-    from('docs/src/info') {
-        include 'changelog.txt'
-    }
-
-    from (javadoc) {
-        into 'api'
-    }
-
-}
-
-task xdModule(type: Copy, dependsOn: build) {
-    def containerDeps = configurations.dirt
-    def moduleRuntime = configurations.runtime.minus(containerDeps)
-    def moduleDir = project.file("${buildDir}/modules/${moduleType}/${moduleName}")
-    inputs.property('deps', moduleRuntime)
-    outputs.dir "${moduleDir}/lib"
-
-    into moduleDir 
-
-    from(moduleRuntime) {
-        into "lib"
-	exclude "jackson*.jar", "jcl*.jar", "joda*.jar", "slf4j*.jar", "spring-batch-infra*.jar", "spring-integration-core*.jar", "spring-messaging*.jar", "spring-*4.0.6*.jar"
-	
-    }
-    from(jar) {
-        into "lib"
-    }
-    from ("modules/${moduleType}/${moduleName}/config") {
-        into "config"
-    }
-}
-
-task xdModuleZip(type: Zip, dependsOn: xdModule) {
-    group = 'Distribution'
-    classifier = 'xdmodule'
-    description = "Builds -${classifier} archive, containing an XD module"
-
-    into("${moduleType}/${moduleName}") {
-        from(xdModule.destinationDir)
-    }
-
-}
-
-task distZip(type: Zip, dependsOn: [jar, docsZip, sourcesJar, javadocJar, xdModuleZip]) {
-    group = 'Distribution'
-    classifier = 'dist'
-    description = "Builds -${classifier} archive, containing all jars and docs, " +
-                  "suitable for community download page."
-
-    ext.zipRootDir = "${project.name}-${project.version}"
-
-    into (zipRootDir) {
-        from('docs/src/info') {
-            include 'readme.txt'
-            include 'license.txt'
-            include 'notice.txt'
-            expand(copyright: new Date().format('yyyy'), version: project.version)
-        }
-
-        from(zipTree(docsZip.archivePath)) {
-            into "docs"
-        }
-
-        into ("dist") {
-            from rootProject.collect { project -> project.libsDir }
-            from xdModuleZip
-        }
-    }
-}
-
-tasks.withType(Test) {
-    systemProperty 'runLongTests', System.getProperty('runLongTests')
-
-    testLogging {
-        exceptionFormat = 'full'
-    }
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-
-    archives docsZip
-    archives distZip
-    archives xdModuleZip
-}
-
-task wrapper(type: Wrapper) {
-    description = 'Generates gradlew[.bat] scripts'
-    gradleVersion = '1.11'
-}
-
-assemble.dependsOn = ['jar', 'sourcesJar']
-defaultTasks 'build'
