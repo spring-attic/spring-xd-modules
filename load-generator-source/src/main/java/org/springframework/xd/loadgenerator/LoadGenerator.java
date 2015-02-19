@@ -56,7 +56,7 @@ public class LoadGenerator extends MessageProducerSupport implements Runnable {
 	private void send() {
 		logger.info("Sending " + messageCount +" messages");
 		for (int x = 0; x < messageCount; x++) {
-			sendMessage(MessageBuilder.withPayload(createMessage(messageCount)).build());
+			sendMessage(MessageBuilder.withPayload(createMessage(x)).build());
 		}
 		logger.info("All Messages Dispatched");
 	}
