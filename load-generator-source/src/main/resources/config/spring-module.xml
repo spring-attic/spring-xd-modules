@@ -15,11 +15,7 @@
         <property name="outputChannel" ref="output"/>
     </bean>
 
-    <int:channel id="output">
-        <int:dispatcher task-executor="taskExecutor"/>
-    </int:channel>
+    <int:channel id="output"/>
 
-    <bean id="taskExecutor"
-          class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor"/>
 
 </beans>
