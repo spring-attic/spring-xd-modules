@@ -75,6 +75,10 @@ public class ThroughputMessageHandler implements MessageHandler {
 			int size = ((byte[]) payload).length;
 			intermediateBytesP = intermediateBytes.addAndGet(size);
 			bytesP = bytes.addAndGet(size);
+		} else if (payload instanceof String) {
+			int size = ((String) payload).getBytes().length;
+			intermediateBytesP = intermediateBytes.addAndGet(size);
+			bytesP = bytes.addAndGet(size);
 		}
 
 		long fullDelta = now - start.get();

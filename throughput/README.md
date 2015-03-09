@@ -79,7 +79,7 @@ or any combination of the above (a report is emitted if _any_ condition is met, 
 
 (1) Note that a message needs to be received still. That is, if nothing happens, you'll not see the report.
 
-(2) Your messages need to be `byte[]` for this to work
+(2) Your messages need to be `byte[]` or `String` for this to work
 
 When a report is emitted, two lines of output are added to the log, like so:
 ```
@@ -89,7 +89,7 @@ Messages =   10070757 in       13,82s =   728550,75/s
 
 The line with the `+` sign is the delta since the last report, while the line with the `=` sign displays metrics since the beginning of the collection (the timer starts when the very first message is received).
 
-Additionnally, if the payload of your messages is of type `byte[]`, you'll see information about the size received, like so:
+Additionnally, if the payload of your messages is of type `byte[]` or `String`, you'll see information about the size received, like so:
 
 ```
 Messages +    1000006 in        1,68s =   593827,79/s    --    Bytes +    1000,01MB in        1,68s =      593,83MB/s
