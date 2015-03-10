@@ -51,7 +51,7 @@ The module configuration:
       Option Name                 Description                                                                                         Default          Type
       --------------------------  --------------------------------------------------------------------------------------------------  ---------------  ----------
       langOutput                  The name of the output property the detected language is written to.                                pred_lang        String
-      textInput                   The name of the text input property.                                                                text             String
+      textInput                   The name of the property that contains the input text.                                              text             String
       languageProfileLocation     The location of the language model. If empty we fall back to the profiles shipped with langdetect.                   String
       textModel                   The name of the text model that should be used either SHORTTEXT or LONGTEXT.                        SHORTTEXT        String
       returnLanguageProbabilites  Returns the detected language probabilities if enabled.                                             false            Boolean
