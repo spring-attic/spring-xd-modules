@@ -46,9 +46,6 @@ The uber-jar will be in `[project-build-dir]/throughput-1.0.0.BUILD-SNAPSHOT.jar
 
 You can also get information about the available module options:
 
-xd:>module info source:load-generator
-Information about source module 'load-generator':
-
 ```
 xd:>module info --name sink:throughput
 Information about sink module 'throughput':
