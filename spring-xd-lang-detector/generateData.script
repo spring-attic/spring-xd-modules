@@ -1,0 +1,5 @@
+http post --data '{"id":"1","text":"Hello World"}' --contentType application/json
+http post --data '{"id":"2","text":"Hallo Welt"}' --contentType application/json
+http post --data '{"id":"3","text":"Santo maccheroni"}' --contentType application/json
+http post --data '{"id":"4","text":"Bonjour Howdy"}' --contentType application/json
+
