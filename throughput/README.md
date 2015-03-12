@@ -19,7 +19,7 @@ The project's [pom](pom.xml) declares `spring-xd-module-parent` as its parent. T
 
 ## Building with Gradle
 
-	$./gradlew clean test bootRepackage
+	$./gradlew build
 
 The project's [build.gradle](build.gradle) applies the `spring-xd-module` plugin, providing analagous build and packaging support for gradle. This plugin also applies the [Spring Boot Gradle Plugin](http://docs.spring.io/spring-boot/docs/current/reference/html/build-tool-plugins-gradle-plugin.html) as well as the [propdeps plugin](https://github.com/spring-projects/gradle-plugins/tree/master/propdeps-plugin). 
 

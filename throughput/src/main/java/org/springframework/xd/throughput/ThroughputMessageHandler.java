@@ -71,12 +71,13 @@ public class ThroughputMessageHandler implements MessageHandler {
 		Object payload = message.getPayload();
 		long intermediateBytesP = 0L;
 		long bytesP = 0L;
+		int size = 0;
 		if (payload instanceof byte[]) {
-			int size = ((byte[]) payload).length;
-			intermediateBytesP = intermediateBytes.addAndGet(size);
-			bytesP = bytes.addAndGet(size);
+			size = ((byte[]) payload).length;
 		} else if (payload instanceof String) {
-			int size = ((String) payload).getBytes().length;
+			size = ((String) payload).getBytes().length;
+		}
+		if (size > 0) {
 			intermediateBytesP = intermediateBytes.addAndGet(size);
 			bytesP = bytes.addAndGet(size);
 		}
