@@ -49,8 +49,6 @@ public class LanguageDetectionProcessorTests {
 
 		Tuple output = languageDetectionProcessor.process(input);
 
-		System.out.println(output);
-
 		assertThat(output.getString(predLangOutField), is("en"));
 	}
 
@@ -60,8 +58,6 @@ public class LanguageDetectionProcessorTests {
 		Tuple input = TupleBuilder.tuple().of("text", "Hallo Welt");
 
 		Tuple output = languageDetectionProcessor.process(input);
-
-		System.out.println(output);
 
 		assertThat(output.getString(predLangOutField), is("de"));
 	}
@@ -73,19 +69,15 @@ public class LanguageDetectionProcessorTests {
 
 		Tuple output = languageDetectionProcessor.process(input);
 
-		System.out.println(output);
-
 		assertThat(output.getString(predLangOutField), is("it"));
 	}
 
 	@Test
-	public void testProcess_simple_short_xxx_text() throws Exception {
+	public void testProcess_simple_short_multi_language_text() throws Exception {
 
 		Tuple input = TupleBuilder.tuple().of("text", "Bonjour Howdy");
 
 		Tuple output = languageDetectionProcessor.process(input);
-
-		System.out.println(output);
 
 		assertThat(output.hasFieldName(predLangOutField), is(true));
 		assertThat(output.getString(predLangOutField), is("en"));
