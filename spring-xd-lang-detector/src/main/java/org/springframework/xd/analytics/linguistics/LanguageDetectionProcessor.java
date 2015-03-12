@@ -34,6 +34,22 @@ import org.springframework.xd.tuple.Tuple;
 import org.springframework.xd.tuple.TupleBuilder;
 
 /**
+ * A processor that can predict the language of a piece of text extracted from a {@link org.springframework.xd.tuple.Tuple}.
+ * <p>
+ * Language prediction is supported for short and long texts via different language models.
+ * Note since the {@code langdetect} library holds the language model as static state one
+ * can only deal with one model instance per {@link java.lang.ClassLoader} at a time.
+ * </p>
+ *
+ * The langdetect library has the following characteristics.
+ * <ul>
+ *     <li>Generate language profiles from Wikipedia abstract xml</li>
+ *     <li>Detect language of a text using naive Bayesian filter</li>
+ *     <li>99% over precision for 53 languages</li>
+ * </ul>
+ *
+ * More details can be found the the <a href="https://code.google.com/p/language-detection/wiki/FrequentlyAskedQuestion">langdetect FAQ</a>.
+ *
  * @author Thomas Darimont
  */
 public class LanguageDetectionProcessor implements InitializingBean {
@@ -54,6 +70,17 @@ public class LanguageDetectionProcessor implements InitializingBean {
 
 	private boolean returnLanguageProbabilities = false;
 
+	/**
+	 * Performs the language prediction based on text extracted from the given {@link org.springframework.xd.tuple.Tuple}.
+	 * <p>
+	 * The text used for the language prediction is extracted via the {@link org.springframework.xd.analytics.linguistics.LanguageDetectionProcessor#inputTextContentPropertyName}
+	 * from the given {@code Tuple}.
+	 * </p>
+	 *
+	 * @param input the {@code Tuple} to extract the text from
+	 * @return a new {@code Tuple} with the predicted language information.
+	 * @throws LangDetectException
+	 */
 	public Tuple process(Tuple input) throws LangDetectException {
 
 		if (!isLanguageDetectionEnabled()) {
@@ -104,6 +131,8 @@ public class LanguageDetectionProcessor implements InitializingBean {
 		}
 
 		DetectorFactory.loadProfile(loadEmbeddedLanguageModels());
+
+		LOG.info("Loaded language profiles from {}.", languageProfileLocation);
 	}
 
 	private List<String> loadEmbeddedLanguageModels() {
@@ -194,6 +223,9 @@ public class LanguageDetectionProcessor implements InitializingBean {
 		this.textModel = textModel;
 	}
 
+	/**
+	 * Enum for the supported text language models.
+	 */
 	public static enum TextModel {
 		SHORTTEXT, LONGTEXT
 	}
