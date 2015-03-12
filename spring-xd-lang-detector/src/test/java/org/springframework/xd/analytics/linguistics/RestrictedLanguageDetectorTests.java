@@ -16,10 +16,7 @@
 package org.springframework.xd.analytics.linguistics;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
-
-import java.util.Map;
 
 import org.junit.Test;
 import org.springframework.xd.tuple.Tuple;
@@ -39,33 +36,9 @@ public class RestrictedLanguageDetectorTests extends AbstractLanguageDetectorTes
 	}
 
 	@Test
-	public void testLanguagePrioritiesTranslation_with_configured_translation() {
-
-		assertThat(languageDetectionProcessor.languagePriorityMap.get("en"), is((Object) 0.1));
-		assertThat(languageDetectionProcessor.languagePriorityMap.get("de"), is((Object) 0.2));
-		assertThat(languageDetectionProcessor.languagePriorityMap.get("fr"), is((Object) 0.3));
-	}
-
-	@Test
-	public void testLanguagePrioritiesTranslation_with_no_translation() {
-
-		Map<String, Double> languagePriorityMap = languageDetectionProcessor.createLanguagePriorityMap(null);
-
-		assertThat(languagePriorityMap.size(), is(equalTo(0)));
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void testLanguagePrioritiesTranslation_with_corrupt_translation() {
-
-		Map<String, Double> languagePriorityMap = languageDetectionProcessor.createLanguagePriorityMap("aaaa:aaaa,bbb:");
-
-		assertThat(languagePriorityMap.size(), is(equalTo(0)));
-	}
-
-	@Test
 	public void testProcess_simple_short_italian_text_should_be_detected_as_english() throws Exception {
 
-		Tuple input = newTupleWithText("Santo maccheroni");
+		Tuple input = newTupleWithText(Texts.SHORT_ITALIAN_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 

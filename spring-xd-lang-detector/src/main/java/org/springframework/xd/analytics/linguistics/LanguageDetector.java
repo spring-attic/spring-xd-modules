@@ -17,6 +17,7 @@ package org.springframework.xd.analytics.linguistics;
 
 import static org.springframework.util.StringUtils.*;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
@@ -25,7 +26,6 @@ import java.util.*;
 import com.cybozu.labs.langdetect.Detector;
 import com.cybozu.labs.langdetect.DetectorFactory;
 import com.cybozu.labs.langdetect.LangDetectException;
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -76,10 +76,12 @@ public class LanguageDetector implements InitializingBean {
 
 	private String languagePriorities;
 
-	@VisibleForTesting
-	Map<String, Double> languagePriorityMap;
+	//we need to use concrete types here since Detector requires them :-(
+	private HashMap<String,Double> languagePriorityMap;
 
 	private DetectorFactoryState detectorFactoryState;
+
+	private LanguagePriorityParser languagePriorityParser = new LanguagePriorityParser();
 
 	/**
 	 * Performs the language prediction based on text extracted from the given {@link org.springframework.xd.tuple.Tuple}.
@@ -135,7 +137,7 @@ public class LanguageDetector implements InitializingBean {
 		Detector detector = new Detector(detectorFactoryState.getWordLangProbMap(), detectorFactoryState.getLanguageList(), detectorFactoryState.getSeed());
 
 		if (!CollectionUtils.isEmpty(languagePriorityMap)) {
-			detector.setPriorMap(new HashMap<String, Double>(languagePriorityMap));
+			detector.setPriorMap(languagePriorityMap);
 		}
 
 		return detector;
@@ -148,47 +150,45 @@ public class LanguageDetector implements InitializingBean {
 	@Override
 	public void afterPropertiesSet() throws Exception {
 
-		if (!isEmpty(this.languageProfileLocation)) {
+		this.languagePriorityMap = new HashMap<String,Double>(languagePriorityParser.parseToLanguagePriorityMap(languagePriorities));
 
-			LOG.info("Using language profiles from {}.", languageProfileLocation);
-			Resource languageProfileResource = new DefaultResourceLoader(getClass().getClassLoader()).getResource(languageProfileLocation);
-			DetectorFactory.loadProfile(languageProfileResource.getFile());
-		} else {
+		loadLanguageProfiles();
 
-			LOG.info("Using embedded language profiles.");
-			DetectorFactory.loadProfile(loadEmbeddedLanguageModels());
-		}
-
-		this.languagePriorityMap = createLanguagePriorityMap(languagePriorities);
-
-		this.detectorFactoryState = createDetectorFactoryState();
+		this.detectorFactoryState = captureDetectorFactoryState();
 
 		LOG.info("Loaded language profiles from {}.", languageProfileLocation);
 	}
 
-	@VisibleForTesting
-	Map<String, Double> createLanguagePriorityMap(String languagePriorities) {
+	private void loadLanguageProfiles() throws LangDetectException, IOException {
 
-		if (languagePriorities == null) {
-			return Collections.emptyMap();
+		if (isEmpty(this.languageProfileLocation)) {
+			LOG.info("Using embedded language profiles.");
+			loadEmbeddedLangaugeProfiles();
+			return;
 		}
 
-		try {
-			String[] langCodeAndWeightPairs = languagePriorities.split(",");
-
-			Map<String, Double> map = new HashMap<String, Double>();
-			for (String pair : langCodeAndWeightPairs) {
-				String[] langCodeAndWeight = pair.split(":");
-				map.put(langCodeAndWeight[0], Double.parseDouble(langCodeAndWeight[1]));
-			}
-
-			return map;
-		} catch (Exception ex) {
-			throw new IllegalArgumentException("Given languagePriorities string must be a list of lang:double, e.g. de:0.1,en:01 - but got <" + languagePriorities + ">");
-		}
+		LOG.info("Using language profiles from {}.", languageProfileLocation);
+		loadExternalLanguageProfiles();
 	}
 
-	private DetectorFactoryState createDetectorFactoryState() {
+	private void loadExternalLanguageProfiles() throws LangDetectException, IOException {
+		Resource languageProfileResource = new DefaultResourceLoader(getClass().getClassLoader()).getResource(languageProfileLocation);
+		DetectorFactory.loadProfile(languageProfileResource.getFile());
+	}
+
+	private void loadEmbeddedLangaugeProfiles() throws LangDetectException {
+		DetectorFactory.loadProfile(extractEmbeddedLanguageModels());
+	}
+
+	/**
+	 * Captures the current state of the {@link com.cybozu.labs.langdetect.DetectorFactory} to make sure
+	 * that state cannot be overridden by concurrent initializations later on.
+	 * <p>This is necessary since, the state in the {@code DetectorFactory} is stored globally.</p>
+	 *
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	private DetectorFactoryState captureDetectorFactoryState() {
 
 		Field detectorFactoryInstanceField = ReflectionUtils.findField(DetectorFactory.class, "instance_");
 		ReflectionUtils.makeAccessible(detectorFactoryInstanceField);
@@ -203,7 +203,7 @@ public class LanguageDetector implements InitializingBean {
 		return new DetectorFactoryState(languageList, wordLangProbMap, isDeterministicLanguageDetection() ? 0L : null);
 	}
 
-	private List<String> loadEmbeddedLanguageModels() {
+	private List<String> extractEmbeddedLanguageModels() {
 
 		List<String> languageModels = new ArrayList<String>();
 
@@ -220,8 +220,6 @@ public class LanguageDetector implements InitializingBean {
 		//added these manually since they were not present in the available Locales.
 		supportedLanguages.add("zh-cn");
 		supportedLanguages.add("zh-tw");
-
-		LOG.info("Using embedded language profiles from classpath.");
 
 		for (String lang : supportedLanguages) {
 			try (InputStream is = DetectorFactory.class.getClassLoader().getResourceAsStream("profiles/" + getTextModel().name().toLowerCase() + "/" + lang)) {

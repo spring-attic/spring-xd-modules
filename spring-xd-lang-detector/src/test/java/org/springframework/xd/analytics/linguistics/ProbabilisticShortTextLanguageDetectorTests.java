@@ -58,7 +58,7 @@ public class ProbabilisticShortTextLanguageDetectorTests extends AbstractLanguag
 	@Test
 	public void testProcess_simple_short_italian_text() throws Exception {
 
-		Tuple input = newTupleWithText("Santo maccheroni");
+		Tuple input = newTupleWithText(Texts.SHORT_ITALIAN_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -68,12 +68,12 @@ public class ProbabilisticShortTextLanguageDetectorTests extends AbstractLanguag
 	@Test
 	public void testProcess_simple_short_multi_language_text() throws Exception {
 
-		Tuple input = newTupleWithText("Bonjour Howdy");
+		Tuple input = newTupleWithText(Texts.SHORT_ENGLISH_FRENCH_MIX_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
 		assertThat(output.hasFieldName(predLangOutField), is(true));
-		assertThat(output.getString(predLangOutField), is("en"));
+		assertThat("en fr".contains(output.getString(predLangOutField)), is(true));
 
 		assertThat(output.hasFieldName(predLangProbsOutputField), is(true));
 		assertThat(output.getValue(predLangProbsOutputField), is(not(nullValue())));
@@ -83,7 +83,7 @@ public class ProbabilisticShortTextLanguageDetectorTests extends AbstractLanguag
 	@Test
 	public void testProcess_should_return_different_probabilities_for_the_same_document() throws Exception {
 
-		Tuple input = newTupleWithText("Then all detections for the same document could potentially return different language and probability.");
+		Tuple input = newTupleWithText(Texts.SHORT_ENGLISH_2);
 
 		Tuple firstOutput = languageDetectionProcessor.process(input);
 		Tuple secondOutput = languageDetectionProcessor.process(input);

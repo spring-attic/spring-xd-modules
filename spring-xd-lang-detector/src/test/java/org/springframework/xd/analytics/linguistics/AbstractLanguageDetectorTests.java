@@ -47,6 +47,7 @@ public abstract class AbstractLanguageDetectorTests {
 		return TupleBuilder.tuple().of("text", text);
 	}
 
+	@SuppressWarnings("unchecked")
 	protected double extractLanguageProbability(Tuple tuple, String language) {
 
 		List<Language> langs = (List<Language>) tuple.getValue(predLangProbsOutputField);
@@ -56,7 +57,7 @@ public abstract class AbstractLanguageDetectorTests {
 			}
 		}
 
-		throw new NoSuchElementException("Language with code: " + language + "could not be found.");
+		throw new NoSuchElementException("Language with code: " + language + " could not be found.");
 	}
 
 	protected LanguageDetector createNewLanguageDetector() {

@@ -38,7 +38,7 @@ public class DeterministicShortTextLanguageDetectorTests extends AbstractLanguag
 	@Test
 	public void testProcess_simple_short_english_text() throws Exception {
 
-		Tuple input = newTupleWithText("Hello World");
+		Tuple input = newTupleWithText(Texts.SHORT_ENGLISH_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -48,7 +48,7 @@ public class DeterministicShortTextLanguageDetectorTests extends AbstractLanguag
 	@Test
 	public void testProcess_simple_short_german_text() throws Exception {
 
-		Tuple input = newTupleWithText("Hallo Welt");
+		Tuple input = newTupleWithText(Texts.SHORT_GERMAN_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -58,7 +58,7 @@ public class DeterministicShortTextLanguageDetectorTests extends AbstractLanguag
 	@Test
 	public void testProcess_simple_short_italian_text() throws Exception {
 
-		Tuple input = newTupleWithText("Santo maccheroni");
+		Tuple input = newTupleWithText(Texts.SHORT_ITALIAN_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -68,7 +68,7 @@ public class DeterministicShortTextLanguageDetectorTests extends AbstractLanguag
 	@Test
 	public void testProcess_simple_short_multi_language_text() throws Exception {
 
-		Tuple input = newTupleWithText("Bonjour Howdy");
+		Tuple input = newTupleWithText(Texts.SHORT_ENGLISH_FRENCH_MIX_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -83,7 +83,7 @@ public class DeterministicShortTextLanguageDetectorTests extends AbstractLanguag
 	@Test
 	public void testProcess_should_return_the_same_probabilities_for_the_same_document() throws Exception {
 
-		Tuple input = newTupleWithText("Then all detections for the same document return the same language and probability.");
+		Tuple input = newTupleWithText(Texts.SHORT_ENGLISH_2);
 
 		Tuple firstOutput = languageDetectionProcessor.process(input);
 		Tuple secondOutput = languageDetectionProcessor.process(input);
