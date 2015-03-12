@@ -19,17 +19,21 @@ import static org.springframework.util.StringUtils.*;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.util.*;
 
 import com.cybozu.labs.langdetect.Detector;
 import com.cybozu.labs.langdetect.DetectorFactory;
 import com.cybozu.labs.langdetect.LangDetectException;
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.xd.tuple.Tuple;
 import org.springframework.xd.tuple.TupleBuilder;
 
@@ -40,40 +44,47 @@ import org.springframework.xd.tuple.TupleBuilder;
  * Note since the {@code langdetect} library holds the language model as static state one
  * can only deal with one model instance per {@link java.lang.ClassLoader} at a time.
  * </p>
- *
  * The langdetect library has the following characteristics.
  * <ul>
- *     <li>Generate language profiles from Wikipedia abstract xml</li>
- *     <li>Detect language of a text using naive Bayesian filter</li>
- *     <li>99% over precision for 53 languages</li>
+ * <li>Generate language profiles from Wikipedia abstract xml</li>
+ * <li>Detect language of a text using naive Bayesian filter</li>
+ * <li>99% over precision for 53 languages</li>
  * </ul>
- *
  * More details can be found the the <a href="https://code.google.com/p/language-detection/wiki/FrequentlyAskedQuestion">langdetect FAQ</a>.
  *
  * @author Thomas Darimont
  */
-public class LanguageDetectionProcessor implements InitializingBean {
+public class LanguageDetector implements InitializingBean {
 
-	private static final Logger LOG = LoggerFactory.getLogger(LanguageDetectionProcessor.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LanguageDetector.class);
 
 	private String languageProfileLocation;
 
-	private TextModel textModel = TextModel.SHORTTEXT;
+	private TextModel textModel;
 
-	private String inputTextContentPropertyName = "text";
+	private String inputTextContentPropertyName;
 
-	private String mostLikelyLanguageOutputPropertyName = "pred_lang";
+	private String mostLikelyLanguageOutputPropertyName;
 
-	private String languageProbabilitiesOutputPropertyName = "pred_lang_probs";
+	private String languageProbabilitiesOutputPropertyName;
 
-	private boolean returnMostLikelyLanguage = true;
+	private boolean returnMostLikelyLanguage;
 
-	private boolean returnLanguageProbabilities = false;
+	private boolean returnLanguageProbabilities;
+
+	private boolean deterministicLanguageDetection;
+
+	private String languagePriorities;
+
+	@VisibleForTesting
+	Map<String, Double> languagePriorityMap;
+
+	private DetectorFactoryState detectorFactoryState;
 
 	/**
 	 * Performs the language prediction based on text extracted from the given {@link org.springframework.xd.tuple.Tuple}.
 	 * <p>
-	 * The text used for the language prediction is extracted via the {@link org.springframework.xd.analytics.linguistics.LanguageDetectionProcessor#inputTextContentPropertyName}
+	 * The text used for the language prediction is extracted via the {@link LanguageDetector#inputTextContentPropertyName}
 	 * from the given {@code Tuple}.
 	 * </p>
 	 *
@@ -89,7 +100,8 @@ public class LanguageDetectionProcessor implements InitializingBean {
 
 		String text = input.getString(getInputTextContentPropertyName());
 
-		Detector detector = DetectorFactory.create();
+		Detector detector = newDetector(this.detectorFactoryState);
+
 		detector.append(text);
 
 		List<String> names = new ArrayList<String>();
@@ -111,6 +123,24 @@ public class LanguageDetectionProcessor implements InitializingBean {
 		return TupleBuilder.tuple().ofNamesAndValues(names, values);
 	}
 
+	/**
+	 * This creates a new {@link com.cybozu.labs.langdetect.Detector} instance.
+	 * We have to create the instance ourselves to avoid problems with the shared state inside {@link com.cybozu.labs.langdetect.DetectorFactory}.
+	 *
+	 * @param detectorFactoryState
+	 * @return
+	 */
+	private Detector newDetector(DetectorFactoryState detectorFactoryState) throws LangDetectException {
+
+		Detector detector = new Detector(detectorFactoryState.getWordLangProbMap(), detectorFactoryState.getLanguageList(), detectorFactoryState.getSeed());
+
+		if (!CollectionUtils.isEmpty(languagePriorityMap)) {
+			detector.setPriorMap(new HashMap<String, Double>(languagePriorityMap));
+		}
+
+		return detector;
+	}
+
 	private boolean isLanguageDetectionEnabled() {
 		return isReturnMostLikelyLanguage() || isReturnLanguageProbabilities();
 	}
@@ -118,21 +148,59 @@ public class LanguageDetectionProcessor implements InitializingBean {
 	@Override
 	public void afterPropertiesSet() throws Exception {
 
-		if (!DetectorFactory.getLangList().isEmpty()) {
-			LOG.info("Skipping initialization of detector since langList has already been initialized.");
-			return;
-		}
-
 		if (!isEmpty(this.languageProfileLocation)) {
-			LOG.info("Using language profiles from {}.", languageProfileLocation);
 
+			LOG.info("Using language profiles from {}.", languageProfileLocation);
 			Resource languageProfileResource = new DefaultResourceLoader(getClass().getClassLoader()).getResource(languageProfileLocation);
 			DetectorFactory.loadProfile(languageProfileResource.getFile());
+		} else {
+
+			LOG.info("Using embedded language profiles.");
+			DetectorFactory.loadProfile(loadEmbeddedLanguageModels());
 		}
 
-		DetectorFactory.loadProfile(loadEmbeddedLanguageModels());
+		this.languagePriorityMap = createLanguagePriorityMap(languagePriorities);
+
+		this.detectorFactoryState = createDetectorFactoryState();
 
 		LOG.info("Loaded language profiles from {}.", languageProfileLocation);
+	}
+
+	@VisibleForTesting
+	Map<String, Double> createLanguagePriorityMap(String languagePriorities) {
+
+		if (languagePriorities == null) {
+			return Collections.emptyMap();
+		}
+
+		try {
+			String[] langCodeAndWeightPairs = languagePriorities.split(",");
+
+			Map<String, Double> map = new HashMap<String, Double>();
+			for (String pair : langCodeAndWeightPairs) {
+				String[] langCodeAndWeight = pair.split(":");
+				map.put(langCodeAndWeight[0], Double.parseDouble(langCodeAndWeight[1]));
+			}
+
+			return map;
+		} catch (Exception ex) {
+			throw new IllegalArgumentException("Given languagePriorities string must be a list of lang:double, e.g. de:0.1,en:01 - but got <" + languagePriorities + ">");
+		}
+	}
+
+	private DetectorFactoryState createDetectorFactoryState() {
+
+		Field detectorFactoryInstanceField = ReflectionUtils.findField(DetectorFactory.class, "instance_");
+		ReflectionUtils.makeAccessible(detectorFactoryInstanceField);
+
+		Field detectorFactoryWordLangProbMapField = ReflectionUtils.findField(DetectorFactory.class, "wordLangProbMap");
+		ReflectionUtils.makeAccessible(detectorFactoryWordLangProbMapField);
+
+		DetectorFactory instance = (DetectorFactory) ReflectionUtils.getField(detectorFactoryInstanceField, null);
+		HashMap<String, double[]> wordLangProbMap = (HashMap<String, double[]>) ReflectionUtils.getField(detectorFactoryWordLangProbMapField, instance);
+		ArrayList<String> languageList = new ArrayList<>(DetectorFactory.getLangList());
+
+		return new DetectorFactoryState(languageList, wordLangProbMap, isDeterministicLanguageDetection() ? 0L : null);
 	}
 
 	private List<String> loadEmbeddedLanguageModels() {
@@ -175,6 +243,14 @@ public class LanguageDetectionProcessor implements InitializingBean {
 		this.languageProfileLocation = languageProfileLocation;
 	}
 
+	public TextModel getTextModel() {
+		return textModel;
+	}
+
+	public void setTextModel(TextModel textModel) {
+		this.textModel = textModel;
+	}
+
 	public String getInputTextContentPropertyName() {
 		return inputTextContentPropertyName;
 	}
@@ -215,18 +291,48 @@ public class LanguageDetectionProcessor implements InitializingBean {
 		this.returnLanguageProbabilities = returnLanguageProbabilities;
 	}
 
-	public TextModel getTextModel() {
-		return textModel;
+	public boolean isDeterministicLanguageDetection() {
+		return deterministicLanguageDetection;
 	}
 
-	public void setTextModel(TextModel textModel) {
-		this.textModel = textModel;
+	public void setDeterministicLanguageDetection(boolean deterministicLanguageDetection) {
+		this.deterministicLanguageDetection = deterministicLanguageDetection;
+	}
+
+	public String getLanguagePriorities() {
+		return languagePriorities;
+	}
+
+	public void setLanguagePriorities(String languagePriorities) {
+		this.languagePriorities = languagePriorities;
 	}
 
 	/**
-	 * Enum for the supported text language models.
+	 * Holds the configured state of the {@link com.cybozu.labs.langdetect.DetectorFactory} at construction time to avoid
+	 * sudden value changes in between. This is necessary since the DetectorFactory state is stored on a global singleton.
 	 */
-	public static enum TextModel {
-		SHORTTEXT, LONGTEXT
+	static class DetectorFactoryState {
+
+		private final ArrayList<String> languageList;
+		private final HashMap<String, double[]> wordLangProbMap;
+		private final Long seed;
+
+		public DetectorFactoryState(ArrayList<String> languageList, HashMap<String, double[]> wordLangProbMap, Long seed) {
+			this.languageList = languageList;
+			this.wordLangProbMap = wordLangProbMap;
+			this.seed = seed;
+		}
+
+		public ArrayList<String> getLanguageList() {
+			return languageList;
+		}
+
+		public HashMap<String, double[]> getWordLangProbMap() {
+			return wordLangProbMap;
+		}
+
+		public Long getSeed() {
+			return seed;
+		}
 	}
 }

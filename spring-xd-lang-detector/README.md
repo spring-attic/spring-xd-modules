@@ -1,13 +1,13 @@
 Spring XD Language Detector Example
-===============================
+===================================
 
-This is an example of a custom module that uses the ([langdetect](https://code.google.com/p/language-detection/)) API.
+This is an example of a custom module that uses the [langdetect](https://code.google.com/p/language-detection/) API.
 
 ## Requirements
 
 In order to install the module run it in your Spring XD installation, you will need to have installed:
 
-* Spring XD version 1.1.x ([Instructions](http://docs.spring.io/spring-xd/docs/current/reference/html/#getting-started))
+* Spring XD version 1.1.x [Instructions](http://docs.spring.io/spring-xd/docs/current/reference/html/#getting-started)
 
 ## Code Tour
 
@@ -45,25 +45,29 @@ The uber-jar will be in `[project build dir]/xd-langdetect-1.0.0.BUILD-SNAPSHOT.
 
 The module configuration:
 
-    xd:>module info --name processor:langdetect
-    Information about processor module 'langdetect':
+     xd:>module info --name processor:langdetect
+     Information about processor module 'langdetect':
 
-      Option Name                 Description                                                                                         Default          Type
-      --------------------------  --------------------------------------------------------------------------------------------------  ---------------  ----------
-      langOutput                  The name of the output property the detected language is written to.                                pred_lang        String
-      textInput                   The name of the property that contains the input text.                                              text             String
-      languageProfileLocation     The location of the language model. If empty we fall back to the profiles shipped with langdetect.                   String
-      textModel                   The name of the text model that should be used either SHORTTEXT or LONGTEXT.                        SHORTTEXT        String
-      returnLanguageProbabilites  Returns the detected language probabilities if enabled.                                             false            Boolean
-      returnMostLikelyLanguage    Returns the most likely detected language if enabled.                                               true             Boolean
-      langProbOutput              The name of the output property the detected language probabilities are written to.                 pred_lang_probs  JSONObject
-      outputType                  how this module should emit messages it produces                                                    <none>           MimeType
-      inputType                   how this module should interpret messages it consumes                                               <none>           MimeType
+       Option Name                              Description                                                                                        Default          Type
+       ---------------------------------------  -------------------------------------------------------------------------------------------------  ---------------  ---------
+       deterministicLanguageDetection           the same language and probability is returned for the same text if enabled                             false            boolean
+       inputTextContentPropertyName             the name of the property that contains the input text                                              text             String
+       languagePriorities                       allows to prioritize languages via pattern, e.g. en:0.1,de:0.1,fr:0.1                              <none>           String
+       languageProbabilitiesOutputPropertyName  the name of the output property the detected language probabilities are written to                 pred_lang_probs  String
+       languageProfileLocation                  the location of the language model. If empty we fall back to the profiles shipped with langdetect                   String
+       mostLikelyLanguageOutputPropertyName     the name of the output property the detected language is written to                                pred_lang        String
+       returnLanguageProbabilities              outputs the detected language probabilities as a list if enabled                                   false            boolean
+       returnMostLikelyLanguage                 returns the most likely detected language if enabled                                               true             boolean
+       textModel                                the name of the text model that should be used either SHORTTEXT or LONGTEXT                        SHORTTEXT        TextModel
+       outputType                               how this module should emit messages it produces                                                   <none>           MimeType
+       inputType                                how this module should interpret messages it consumes                                              <none>           MimeType                                         <none>           MimeType
+
+
 
 Now create an deploy a stream:
 
 ```
-xd:>stream create langdetect-demo --definition "http | langdetect --inputType=application/x-xd-tuple --returnLanguageProbabilites=true | log" --deploy
+xd:>stream create langdetect-demo --definition "http | langdetect --inputType=application/x-xd-tuple --returnLanguageProbabilities=true | log" --deploy
 ```
 
 To post several messages, use the script file generateData.script located in this repository.
@@ -97,7 +101,7 @@ To destroy the stream
 xd:> stream destroy --name langdetect-demo
 ```
 
-To delete the module (you must undeploy first!)
+To delete the module (Note that the stream must be undeployed first!)
 
 ```
 module delete --name processor:langdetect

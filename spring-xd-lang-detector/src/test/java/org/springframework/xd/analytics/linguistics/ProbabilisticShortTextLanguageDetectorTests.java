@@ -18,34 +18,27 @@ package org.springframework.xd.analytics.linguistics;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.xd.tuple.Tuple;
-import org.springframework.xd.tuple.TupleBuilder;
 
 /**
  * @author Thomas Darimont
  */
-public class LanguageDetectionProcessorTests {
+public class ProbabilisticShortTextLanguageDetectorTests extends AbstractLanguageDetectorTests {
 
-	LanguageDetectionProcessor languageDetectionProcessor;
-	private String predLangOutField = "pred_lang";
-	private String predLangProbsOutputField = "pred_lang_probs";
+	@Override
+	protected LanguageDetector createNewLanguageDetector() {
 
-	@Before
-	public void setup() throws Exception {
+		LanguageDetector processor = super.createNewLanguageDetector();
+		processor.setDeterministicLanguageDetection(false);
 
-		languageDetectionProcessor = new LanguageDetectionProcessor();
-		languageDetectionProcessor.setReturnMostLikelyLanguage(true);
-		languageDetectionProcessor.setReturnLanguageProbabilities(true);
-
-		languageDetectionProcessor.afterPropertiesSet();
+		return processor;
 	}
 
 	@Test
 	public void testProcess_simple_short_english_text() throws Exception {
 
-		Tuple input = TupleBuilder.tuple().of("text", "Hello World");
+		Tuple input = newTupleWithText("Hello World");
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -55,7 +48,7 @@ public class LanguageDetectionProcessorTests {
 	@Test
 	public void testProcess_simple_short_german_text() throws Exception {
 
-		Tuple input = TupleBuilder.tuple().of("text", "Hallo Welt");
+		Tuple input = newTupleWithText("Hallo Welt");
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -65,7 +58,7 @@ public class LanguageDetectionProcessorTests {
 	@Test
 	public void testProcess_simple_short_italian_text() throws Exception {
 
-		Tuple input = TupleBuilder.tuple().of("text", "Santo maccheroni");
+		Tuple input = newTupleWithText("Santo maccheroni");
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -75,7 +68,7 @@ public class LanguageDetectionProcessorTests {
 	@Test
 	public void testProcess_simple_short_multi_language_text() throws Exception {
 
-		Tuple input = TupleBuilder.tuple().of("text", "Bonjour Howdy");
+		Tuple input = newTupleWithText("Bonjour Howdy");
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -84,5 +77,17 @@ public class LanguageDetectionProcessorTests {
 
 		assertThat(output.hasFieldName(predLangProbsOutputField), is(true));
 		assertThat(output.getValue(predLangProbsOutputField), is(not(nullValue())));
+	}
+
+
+	@Test
+	public void testProcess_should_return_different_probabilities_for_the_same_document() throws Exception {
+
+		Tuple input = newTupleWithText("Then all detections for the same document could potentially return different language and probability.");
+
+		Tuple firstOutput = languageDetectionProcessor.process(input);
+		Tuple secondOutput = languageDetectionProcessor.process(input);
+
+		assertThat(extractLanguageProbability(firstOutput, "en"), is(not(equalTo(extractLanguageProbability(secondOutput, "en")))));
 	}
 }

@@ -7,17 +7,17 @@
 		http://www.springframework.org/schema/integration
 		http://www.springframework.org/schema/integration/spring-integration.xsd">
 
+    <bean id="langDetector" class="org.springframework.xd.analytics.linguistics.LanguageDetector">
 
-    <bean id="langDetector" class="org.springframework.xd.analytics.linguistics.LanguageDetectionProcessor">
+        <property name="inputTextContentPropertyName" value="${inputTextContentPropertyName}"/>
 
-        <property name="inputTextContentPropertyName" value="${textInput}"/>
-
-        <property name="mostLikelyLanguageOutputPropertyName" value="${langOutput}"/>
-        <property name="languageProbabilitiesOutputPropertyName" value="${langProbOutput}"/>
+        <property name="mostLikelyLanguageOutputPropertyName" value="${mostLikelyLanguageOutputPropertyName}"/>
+        <property name="languageProbabilitiesOutputPropertyName" value="${languageProbabilitiesOutputPropertyName}"/>
 
         <property name="languageProfileLocation" value="${languageProfileLocation}"/>
-        <property name="returnLanguageProbabilities" value="${returnLanguageProbabilites}"/>
+        <property name="returnLanguageProbabilities" value="${returnLanguageProbabilities}"/>
         <property name="returnMostLikelyLanguage" value="${returnMostLikelyLanguage}"/>
+        <property name="deterministicLanguageDetection" value="${deterministicLanguageDetection}"/>
 
         <property name="textModel" value="${textModel}"/>
     </bean>
