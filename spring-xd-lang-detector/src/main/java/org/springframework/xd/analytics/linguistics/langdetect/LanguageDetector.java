@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.xd.analytics.linguistics;
+package org.springframework.xd.analytics.linguistics.langdetect;
 
 import static org.springframework.util.StringUtils.*;
 

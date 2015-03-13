@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.xd.analytics.linguistics;
+package org.springframework.xd.analytics.linguistics.langdetect;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
@@ -24,22 +24,21 @@ import org.springframework.xd.tuple.Tuple;
 /**
  * @author Thomas Darimont
  */
-public class DeterministicLongTextLanguageDetectorTests extends AbstractLanguageDetectorTests {
+public class DeterministicShortTextLanguageDetectorTests extends AbstractLanguageDetectorTests {
 
 	@Override
 	protected LanguageDetector createNewLanguageDetector() {
 
 		LanguageDetector processor = super.createNewLanguageDetector();
-		processor.setTextModel(TextModel.LONGTEXT);
 		processor.setDeterministicLanguageDetection(true);
 
 		return processor;
 	}
 
 	@Test
-	public void testProcess_simple_long_english_text() throws Exception {
+	public void testProcess_simple_short_english_text() throws Exception {
 
-		Tuple input = newTupleWithText(Texts.LONG_ENGLISH_1);
+		Tuple input = newTupleWithText(Texts.SHORT_ENGLISH_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -47,9 +46,9 @@ public class DeterministicLongTextLanguageDetectorTests extends AbstractLanguage
 	}
 
 	@Test
-	public void testProcess_simple_long_german_text() throws Exception {
+	public void testProcess_simple_short_german_text() throws Exception {
 
-		Tuple input = newTupleWithText(Texts.LONG_GERMAN_1);
+		Tuple input = newTupleWithText(Texts.SHORT_GERMAN_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -59,7 +58,7 @@ public class DeterministicLongTextLanguageDetectorTests extends AbstractLanguage
 	@Test
 	public void testProcess_simple_short_italian_text() throws Exception {
 
-		Tuple input = newTupleWithText(Texts.LONG_ITALIAN_1);
+		Tuple input = newTupleWithText(Texts.SHORT_ITALIAN_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
@@ -67,14 +66,14 @@ public class DeterministicLongTextLanguageDetectorTests extends AbstractLanguage
 	}
 
 	@Test
-	public void testProcess_simple_long_multi_language_text() throws Exception {
+	public void testProcess_simple_short_multi_language_text() throws Exception {
 
-		Tuple input = newTupleWithText(Texts.LONG_ENGLISH_1 + Texts.LONG_GERMAN_1);
+		Tuple input = newTupleWithText(Texts.SHORT_ENGLISH_FRENCH_MIX_1);
 
 		Tuple output = languageDetectionProcessor.process(input);
 
 		assertThat(output.hasFieldName(predLangOutField), is(true));
-		assertThat(output.getString(predLangOutField), is("de"));
+		assertThat(output.getString(predLangOutField), is("en"));
 
 		assertThat(output.hasFieldName(predLangProbsOutputField), is(true));
 		assertThat(output.getValue(predLangProbsOutputField), is(not(nullValue())));
@@ -84,11 +83,11 @@ public class DeterministicLongTextLanguageDetectorTests extends AbstractLanguage
 	@Test
 	public void testProcess_should_return_the_same_probabilities_for_the_same_document() throws Exception {
 
-		Tuple input = newTupleWithText(Texts.LONG_GERMAN_1);
+		Tuple input = newTupleWithText(Texts.SHORT_ENGLISH_2);
 
 		Tuple firstOutput = languageDetectionProcessor.process(input);
 		Tuple secondOutput = languageDetectionProcessor.process(input);
 
-		assertThat(extractLanguageProbability(firstOutput, "de"), is(equalTo(extractLanguageProbability(secondOutput, "de"))));
+		assertThat(extractLanguageProbability(firstOutput,"en"), is(equalTo(extractLanguageProbability(secondOutput, "en"))));
 	}
 }

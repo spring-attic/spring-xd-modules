@@ -1,4 +1,4 @@
-package org.springframework.xd.analytics.linguistics;
+package org.springframework.xd.analytics.linguistics.langdetect;
 
 /**
  * @author Thomas Darimont

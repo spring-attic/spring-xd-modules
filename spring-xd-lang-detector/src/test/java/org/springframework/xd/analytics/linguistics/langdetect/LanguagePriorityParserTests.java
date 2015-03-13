@@ -1,4 +1,4 @@
-package org.springframework.xd.analytics.linguistics;
+package org.springframework.xd.analytics.linguistics.langdetect;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.core.IsEqual.equalTo;
