@@ -16,14 +16,14 @@
 
 package org.springframework.xd.throughput;
 
-import static org.springframework.xd.throughput.SizeUnit.*;
-import static org.springframework.xd.throughput.TimeUnit.*;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.context.Lifecycle;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
@@ -32,18 +32,17 @@ import org.springframework.messaging.MessagingException;
  * A simple handler that will count messages and log witnessed throughput at some interval.
  *
  * @author Eric Bottard
+ * @author Marius Bogoevici
  */
-public class ThroughputMessageHandler implements MessageHandler {
+public class ThroughputMessageHandler implements MessageHandler, Lifecycle {
 
-	/*default*/ Logger logger;
+	private Logger logger;
 
 	private final AtomicLong counter = new AtomicLong();
 
-	private final AtomicLong start = new AtomicLong();
+	private final AtomicLong start = new AtomicLong(-1);
 
-	private final AtomicLong bytes = new AtomicLong();
-
-	private final AtomicLong intermediateStart = new AtomicLong();
+	private final AtomicLong bytes = new AtomicLong(-1);
 
 	private final AtomicLong intermediateCounter = new AtomicLong();
 
@@ -51,79 +50,64 @@ public class ThroughputMessageHandler implements MessageHandler {
 
 	private long reportEveryMs;
 
-	private long reportEveryNumber;
-
-	private long reportEveryBytes;
-
-	private long totalExpected;
-
 	private TimeUnit timeUnit = TimeUnit.s;
-
-	private SizeUnit sizeUnit = SizeUnit.MB;
 
 	private Clock clock = new Clock();
 
-	@Override
-	public void handleMessage(Message<?> message) throws MessagingException {
-		long now = clock.now();
-		start.compareAndSet(0L, now);
-		intermediateStart.compareAndSet(0L, now);
-		Object payload = message.getPayload();
-		long intermediateBytesP = 0L;
-		long bytesP = 0L;
-		int size = 0;
-		if (payload instanceof byte[]) {
-			size = ((byte[]) payload).length;
-		} else if (payload instanceof String) {
-			size = ((String) payload).getBytes().length;
-		}
-		if (size > 0) {
-			intermediateBytesP = intermediateBytes.addAndGet(size);
-			bytesP = bytes.addAndGet(size);
-		}
+	private volatile boolean running;
 
-		long fullDelta = now - start.get();
-		long intermediateStartP = intermediateStart.get();
+	private ExecutorService executorService;
 
-		long counterP = counter.incrementAndGet();
-		long intermediateCounterP = intermediateCounter.incrementAndGet();
+	private boolean reportBytes = false;
 
-		long intermediateDelta = now - intermediateStartP;
-		if (intermediateCounterP >= reportEveryNumber || intermediateDelta >= reportEveryMs || intermediateBytesP >= reportEveryBytes || counterP == totalExpected) {
-			double scaledIntermediateDelta = timeUnit.convert(intermediateDelta, ms);
-			double scaledFullDelta = timeUnit.convert(fullDelta, ms);
-
-			double deltaThroughput = (double) intermediateCounterP / scaledIntermediateDelta;
-			double fullThroughput = (double) counterP / scaledFullDelta;
-			String intermediateMsgs = String.format("Messages + %10d in %11.2f%s = %11.2f/%3$s", intermediateCounterP, scaledIntermediateDelta, timeUnit, deltaThroughput);
-			String fullMsgs = String.format("Messages = %10d in %11.2f%s = %11.2f/%3$s", counterP, scaledFullDelta, timeUnit, fullThroughput);
-
-			String intermediatePayload = "";
-			String fullPayload = "";
-			if (bytesP > 0L) {
-				double bytesDeltaThroughput = sizeUnit.convert(intermediateBytesP, B) / scaledIntermediateDelta;
-				double bytesThroughput = sizeUnit.convert(bytesP, B) / scaledFullDelta;
-				intermediatePayload = String.format("    --    Bytes + %10.2f%s in %11.2f%s = %11.2f%2$s/%4$s", sizeUnit.convert(intermediateBytesP, B), sizeUnit, scaledIntermediateDelta, timeUnit, bytesDeltaThroughput);
-				fullPayload = String.format("    --    Bytes = %10.2f%s in %11.2f%s = %11.2f%2$s/%4$s", sizeUnit.convert(bytesP, B), sizeUnit, scaledFullDelta, timeUnit, bytesThroughput);
-			}
-			logger.info(intermediateMsgs + intermediatePayload);
-			logger.info(fullMsgs + fullPayload);
-			intermediateStart.set(now);
-			intermediateCounter.set(0L);
-			intermediateBytes.set(0L);
-			if (counterP == totalExpected) {
-				reset();
-			}
-		}
+	public ThroughputMessageHandler() {
 
 	}
 
-	private void reset() {
-		start.set(0L);
-		counter.set(0L);
-		intermediateStart.set(0L);
-		intermediateCounter.set(0L);
-		intermediateBytes.set(0L);
+	@Override
+	public void start() {
+		if (executorService == null) {
+			executorService = Executors.newFixedThreadPool(1);
+		}
+		this.running = true;
+	}
+
+	@Override
+	public void stop() {
+		this.running = false;
+	}
+
+	@Override
+	public boolean isRunning() {
+		return running;
+	}
+
+	@Override
+	public void handleMessage(Message<?> message) throws MessagingException {
+		if (start.get() == -1L) {
+			synchronized (start) {
+				if (start.get() == -1L) {
+					// assume a homogeneous message structure - this is intended for perf tests so we can safely assume
+					// that the messages are similar,  Therefore we'll do our reporting based on the first message
+					Object payload = message.getPayload();
+					if (payload instanceof byte[] || payload instanceof String) {
+						reportBytes = true;
+					}
+					start.set(clock.now());
+					executorService.execute(new ReportStats());
+				}
+			}
+		}
+		intermediateCounter.incrementAndGet();
+		if (reportBytes) {
+			Object payload = message.getPayload();
+			if (payload instanceof byte[]) {
+				intermediateBytes.addAndGet(((byte[]) payload).length);
+			}
+			else if (payload instanceof String) {
+				intermediateBytes.addAndGet((((String) payload).getBytes()).length);
+			}
+		}
 	}
 
 	/**
@@ -139,28 +123,56 @@ public class ThroughputMessageHandler implements MessageHandler {
 		this.reportEveryMs = reportEveryMs;
 	}
 
-	public void setReportEveryNumber(long reportEveryNumber) {
-		this.reportEveryNumber = reportEveryNumber;
-	}
-
-	public void setReportEveryBytes(long reportEveryBytes) {
-		this.reportEveryBytes = reportEveryBytes;
-	}
-
-	public void setTotalExpected(long totalExpected) {
-		this.totalExpected = totalExpected;
-	}
-
 	public void setTimeUnit(TimeUnit timeUnit) {
 		this.timeUnit = timeUnit;
 	}
 
-	public void setSizeUnit(SizeUnit sizeUnit) {
-		this.sizeUnit = sizeUnit;
-	}
-
 	public void setLogger(String name) {
 		this.logger = LoggerFactory.getLogger("xd.sink.throughput." + name);
+	}
 
+	private class ReportStats implements Runnable {
+		@Override
+		public void run() {
+			while (isRunning()) {
+				intermediateCounter.set(0L);
+				intermediateBytes.set(0L);
+				long intervalStart = clock.now();
+				try {
+					Thread.sleep(reportEveryMs);
+					long timeNow = clock.now();
+					long currentCounter = intermediateCounter.get();
+					long currentBytes = intermediateBytes.get();
+					long totalCounter = counter.addAndGet(currentCounter);
+					long totalBytes = bytes.addAndGet(currentBytes);
+
+					logger.info(
+							String.format("Messages: %10d in %5.2f%s = %11.2f/s",
+									currentCounter,
+									(timeNow - intervalStart)/ 1000.0, timeUnit, ((double) currentCounter * 1000 / reportEveryMs)));
+					logger.info(
+							String.format("Messages: %10d in %5.2f%s = %11.2f/s",
+									totalCounter, (timeNow - start.get()) / 1000.0, timeUnit,
+									((double) totalCounter * 1000 / (timeNow - start.get()))));
+					if (reportBytes) {
+						logger.info(
+								String.format("Throughput: %12d in %5.2f%s = %11.2fMB/s, ",
+										currentBytes,
+										(timeNow - intervalStart)/ 1000.0, timeUnit,
+										(((double) currentBytes / (1024.0 * 1024)) * 1000 / reportEveryMs)));
+						logger.info(
+								String.format("Throughput: %12d in %5.2f%s = %11.2fMB/s",
+										totalBytes, (timeNow - start.get()) / 1000.0, timeUnit,
+										(((double) totalBytes / (1024.0 * 1024)) * 1000 / (timeNow - start.get()))));
+					}
+				}
+				catch (InterruptedException e) {
+					if (!isRunning()) {
+						Thread.currentThread().interrupt();
+					}
+				}
+			}
+		}
 	}
 }
+

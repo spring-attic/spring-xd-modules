@@ -9,16 +9,12 @@
 
     <int:channel id="input"/>
 
-	<int:service-activator input-channel="input" auto-startup="false">
-		<bean class="org.springframework.xd.throughput.ThroughputMessageHandler">
-			<property name="reportEveryBytes" value="${reportEveryBytes}" />
-			<property name="reportEveryMs" value="${reportEveryMs}" />
-			<property name="reportEveryNumber" value="${reportEveryNumber}" />
-			<property name="sizeUnit" value="${sizeUnit}" />
-			<property name="timeUnit" value="${timeUnit}" />
-			<property name="totalExpected" value="${totalExpected}" />
-			<property name="logger" value="${logger}" />
-		</bean>
-	</int:service-activator>
+	<bean id="throughputMessageHandler" class="org.springframework.xd.throughput.ThroughputMessageHandler">
+		<property name="reportEveryMs" value="${reportEveryMs}" />
+		<property name="timeUnit" value="${timeUnit}" />
+		<property name="logger" value="${logger}" />
+	</bean>
+
+	<int:service-activator input-channel="input" auto-startup="false" ref="throughputMessageHandler"/>
 
 </beans>

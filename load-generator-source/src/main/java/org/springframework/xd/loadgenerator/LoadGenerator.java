@@ -18,11 +18,13 @@ package org.springframework.xd.loadgenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.integration.endpoint.MessageProducerSupport;
-import org.springframework.integration.support.MessageBuilder;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,81 +35,130 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * XD in different environments.
  *
  * @author Glenn Renfro
+ * @author Marius Bogoevici
+ * @author Mark Pollack
  */
 public class LoadGenerator extends MessageProducerSupport {
 
-	private int producers;
-	private int messageSize;
-	private int messageCount;
-	private final AtomicBoolean running = new AtomicBoolean(false);
-	private ExecutorService executorService;
+    private int producers;
 
-	Logger logger = LoggerFactory.getLogger(LoadGenerator.class);
+    private int messageSize;
 
-	public LoadGenerator(int producers, int messageSize, int messageCount) {
-		this.producers = producers;
-		this.messageSize = messageSize;
-		this.messageCount = messageCount;
-	}
+    private int messageCount;
 
-	@Override
-	protected void doStart() {
-		executorService = Executors.newFixedThreadPool(producers);
-		if (running.compareAndSet(false, true)) {
-			for (int x = 0; x < producers; x++) {
-				executorService.submit(new Producer());
-			}
-		}
-	}
+    private boolean generateTimestamp;
 
-	@Override
-	protected void doStop() {
-		if (running.compareAndSet(true, false)) {
-			executorService.shutdown();
-		}
-	}
+    private final AtomicBoolean running = new AtomicBoolean(false);
 
-	protected class Producer implements Runnable {
-		
-		private void send() {
-			logger.info("Sending " + messageCount + " messages");
-			for (int x = 0; x < messageCount; x++) {
-				sendMessage(MessageBuilder.withPayload(createMessage(x)).build());
-			}
-			logger.info("All Messages Dispatched");
-		}
+    private ExecutorService executorService;
 
-		/**
-		 * Creates a message that can be consumed by the Rabbit perfTest Client
-		 *
-		 * @param sequenceNumber a number to be prepended to the message
-		 * @return a byte array containing a series of numbers that match the message size as
-		 * specified by the messageSize constructor arg.
-		 */
-		private byte[] createMessage(int sequenceNumber) {
-			byte message[] = new byte[messageSize];
-			try {
-				ByteArrayOutputStream acc = new ByteArrayOutputStream();
-				DataOutputStream d = new DataOutputStream(acc);
-				long nano = System.nanoTime();
-				d.writeInt(sequenceNumber);
-				d.writeLong(nano);
-				d.flush();
-				acc.flush();
-				byte[] m = acc.toByteArray();
-				if (m.length <= messageSize) {
-					System.arraycopy(m, 0, message, 0, m.length);
-					return message;
-				} else {
-					return m;
-				}
-			} catch (IOException ioe) {
-				throw new IllegalStateException(ioe);
-			}
-		}
+    Logger logger = LoggerFactory.getLogger(LoadGenerator.class);
 
-		public void run() {
-			send();
-		}
-	}
+    public LoadGenerator(int producers, int messageSize, int messageCount, boolean generateTimestamp) {
+        this.producers = producers;
+        this.messageSize = messageSize;
+        this.messageCount = messageCount;
+        this.generateTimestamp = generateTimestamp;
+    }
+
+    @Override
+    protected void doStart() {
+        executorService = Executors.newFixedThreadPool(producers);
+        if (running.compareAndSet(false, true)) {
+            for (int x = 0; x < producers; x++) {
+                executorService.execute(new Producer(x));
+            }
+        }
+    }
+
+    @Override
+    protected void doStop() {
+        if (running.compareAndSet(true, false)) {
+            executorService.shutdown();
+        }
+    }
+
+    protected class Producer implements Runnable {
+
+        int producerId;
+
+        public Producer(int producerId) {
+            this.producerId = producerId;
+        }
+
+        private void send() {
+            logger.info("Producer " + producerId + " sending " + messageCount + " messages");
+            for (int x = 0; x < messageCount; x++) {
+                final byte[] message = createPayload(x);
+                sendMessage(new TestMessage(message));
+            }
+            logger.info("All Messages Dispatched");
+        }
+
+        /**
+         * Creates a message for consumption by the load-generator sink.  The payload will
+         * optionally contain a timestamp and sequence number if the generateTimestamp
+         * property is set to true.
+         *
+         * @param sequenceNumber a number to be prepended to the message
+         * @return a byte array containing a series of numbers that match the message size as
+         * specified by the messageSize constructor arg.
+         */
+        private byte[] createPayload(int sequenceNumber) {
+            byte message[] = new byte[messageSize];
+            if (generateTimestamp) {
+                try {
+                    ByteArrayOutputStream acc = new ByteArrayOutputStream();
+                    DataOutputStream d = new DataOutputStream(acc);
+                    long nano = System.nanoTime();
+                    d.writeInt(sequenceNumber);
+                    d.writeLong(nano);
+                    d.flush();
+                    acc.flush();
+                    byte[] m = acc.toByteArray();
+                    if (m.length <= messageSize) {
+                        System.arraycopy(m, 0, message, 0, m.length);
+                        return message;
+                    } else {
+                        return m;
+                    }
+                } catch (IOException ioe) {
+                    throw new IllegalStateException(ioe);
+                }
+            } else {
+                return message;
+            }
+        }
+
+        public void run() {
+            send();
+        }
+
+        private class TestMessage implements Message<byte[]> {
+            private final byte[] message;
+
+            private final TestMessageHeaders headers;
+
+            public TestMessage(byte[] message) {
+                this.message = message;
+                this.headers = new TestMessageHeaders(null);
+            }
+
+            @Override
+            public byte[] getPayload() {
+                return message;
+            }
+
+            @Override
+            public MessageHeaders getHeaders() {
+                return headers;
+            }
+
+            class TestMessageHeaders extends MessageHeaders {
+                public TestMessageHeaders(Map<String, Object> headers) {
+                    super(headers, ID_VALUE_NONE, -1L);
+                }
+            }
+        }
+    }
 }
