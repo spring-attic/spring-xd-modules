@@ -1,0 +1,62 @@
+
+buildscript {
+    repositories {
+        maven { url "http://repo.spring.io/plugins-snapshot" }
+        maven { url "http://repo.spring.io/release" }
+        jcenter()
+        maven { url "http://repo.spring.io/snapshot" }
+        maven { url "http://repo.spring.io/milestone" }
+    }
+    dependencies {
+        classpath("org.springframework.xd:spring-xd-module-plugin:1.1.0.RELEASE")
+    }
+}
+
+ext {
+    springXdVersion = '1.1.0.RELEASE'
+    springIntegrationVersion = '4.1.2.RELEASE'
+    reactorVersion = '2.0.1.BUILD-SNAPSHOT'
+}
+
+repositories {
+    mavenLocal()
+    maven { url "http://repo.spring.io/release" }
+    mavenCentral()
+    jcenter()
+    maven { url "http://repo.spring.io/snapshot" }
+    maven { url "http://repo.spring.io/milestone" } 
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'spring-xd-module'
+
+group = 'org.springframework.xd.greenplum.gpfdist'
+version = '1.0.0.BUILD-SNAPSHOT'
+description = "Spring XD Greenplum/HAWQ gpfdist sink module"
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+dependencies {
+
+    compile "io.projectreactor:reactor-core:${reactorVersion}"
+    compile "io.projectreactor:reactor-net:${reactorVersion}"
+
+    // remove
+    compile "com.codahale.metrics:metrics-core:3.0.2"
+
+    testCompile "junit:junit"
+    testCompile "org.springframework:spring-test"
+    testCompile "org.mockito:mockito-core"
+    testCompile "org.hamcrest:hamcrest-library"
+//    testCompile "junit:junit:$junitVersion"
+//    testCompile "org.springframework:spring-test:$springVersion"
+//    testCompile "org.mockito:mockito-core:$mockitoVersion"
+//    testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.12'
+}

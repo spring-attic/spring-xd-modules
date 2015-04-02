@@ -1,0 +1,124 @@
+/*
+ * Copyright 2015 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.springframework.xd.greenplum.gpfdist;
+
+import java.util.concurrent.TimeUnit;
+
+import org.reactivestreams.Processor;
+import org.reactivestreams.Publisher;
+
+import reactor.Environment;
+import reactor.core.processor.RingBufferWorkProcessor;
+import reactor.fn.BiFunction;
+import reactor.fn.Function;
+import reactor.io.buffer.Buffer;
+import reactor.io.net.NetStreams;
+import reactor.io.net.Spec.HttpServer;
+import reactor.io.net.http.HttpChannel;
+import reactor.rx.Stream;
+import reactor.rx.Streams;
+
+public class GPFDistServer {
+
+	private final Processor<Buffer, Buffer> processor;
+
+	private final int port;
+
+	private final int flushCount;
+
+	private final int flushTime;
+
+	private final int batchTime;
+
+	private reactor.io.net.http.HttpServer<Buffer, Buffer> server;
+
+	public GPFDistServer(Processor<Buffer, Buffer> processor, int port, int flushCount, int flushTime, int batchTime) {
+		this.processor = processor;
+		this.port = port;
+		this.flushCount = flushCount;
+		this.flushTime = flushTime;
+		this.batchTime = batchTime;
+	}
+
+	public synchronized reactor.io.net.http.HttpServer<Buffer, Buffer> start() throws Exception {
+		if (server == null) {
+			server = createProtocolListener();
+		}
+		return server;
+	}
+
+	public synchronized void stop() throws Exception {
+		if (server != null) {
+			server.shutdown().awaitSuccess();
+		}
+		server = null;
+	}
+
+	private reactor.io.net.http.HttpServer<Buffer, Buffer> createProtocolListener()
+			throws Exception {
+
+		final Stream<Buffer> stream = Streams
+		.wrap(processor)
+		.window(flushCount, flushTime, TimeUnit.SECONDS)
+		.flatMap(new Function<Stream<Buffer>, Publisher<Buffer>>() {
+
+			@Override
+			public Publisher<Buffer> apply(Stream<Buffer> t) {
+				return t.reduce(new Buffer(), new BiFunction<Buffer, Buffer, Buffer>() {
+
+					@Override
+					public Buffer apply(Buffer prev, Buffer next) {
+						return prev.append(next);
+					}
+				});
+			}
+		})
+		.process(RingBufferWorkProcessor.<Buffer>create(false));
+
+		reactor.io.net.http.HttpServer<Buffer, Buffer> httpServer = NetStreams
+				.httpServer(new Function<HttpServer<Buffer, Buffer>, HttpServer<Buffer, Buffer>>() {
+
+					@Override
+					public HttpServer<Buffer, Buffer> apply(HttpServer<Buffer, Buffer> server) {
+						return server
+								.codec(new GPFDistCodec())
+								.listen(port)
+								.dispatcher(Environment.sharedDispatcher());
+					}
+				});
+
+		httpServer.get("/data", new Function<HttpChannel<Buffer, Buffer>, Publisher<Buffer>>(){
+
+			@Override
+			public Publisher<Buffer> apply(HttpChannel<Buffer, Buffer> request) {
+				request.responseHeaders().removeTransferEncodingChunked();
+				request.addResponseHeader("Content-type", "text/plain");
+				request.addResponseHeader("Expires", "0");
+				request.addResponseHeader("X-GPFDIST-VERSION", "Spring XD");
+				request.addResponseHeader("X-GP-PROTO", "1");
+				request.addResponseHeader("Cache-Control", "no-cache");
+				request.addResponseHeader("Connection", "close");
+				return stream
+						.take(batchTime, TimeUnit.SECONDS)
+						.concatWith(Streams.just(Buffer.wrap(new byte[0])));
+			}
+		});
+
+		httpServer.start().awaitSuccess();
+		return httpServer;
+	}
+
+}
