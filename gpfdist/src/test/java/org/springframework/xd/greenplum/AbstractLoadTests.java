@@ -105,7 +105,7 @@ public abstract class AbstractLoadTests {
 	public void setup() throws Exception {
 		Environment.initializeIfEmpty().assignErrorJournal();
 		processor = RingBufferProcessor.create(false);
-		server = new GPFDistServer(processor, 8080, 100, 1, 2);
+		server = new GPFDistServer(processor, 8080, 100, 1, 100, 2);
 		server.start();
 		context = new AnnotationConfigApplicationContext();
 	}

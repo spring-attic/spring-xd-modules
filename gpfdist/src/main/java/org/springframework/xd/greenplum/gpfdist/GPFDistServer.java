@@ -17,21 +17,25 @@ package org.springframework.xd.greenplum.gpfdist;
 
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
 
-import reactor.Environment;
 import reactor.core.processor.RingBufferWorkProcessor;
 import reactor.fn.BiFunction;
 import reactor.fn.Function;
 import reactor.io.buffer.Buffer;
 import reactor.io.net.NetStreams;
-import reactor.io.net.Spec.HttpServer;
+import reactor.io.net.Spec.HttpServerSpec;
 import reactor.io.net.http.HttpChannel;
+import reactor.io.net.http.HttpServer;
 import reactor.rx.Stream;
 import reactor.rx.Streams;
 
 public class GPFDistServer {
+
+	private final static Log log = LogFactory.getLog(GPFDistServer.class);
 
 	private final Processor<Buffer, Buffer> processor;
 
@@ -41,19 +45,24 @@ public class GPFDistServer {
 
 	private final int flushTime;
 
-	private final int batchTime;
+	private final int batchTimeout;
 
-	private reactor.io.net.http.HttpServer<Buffer, Buffer> server;
+	private final int batchCount;
 
-	public GPFDistServer(Processor<Buffer, Buffer> processor, int port, int flushCount, int flushTime, int batchTime) {
+	private HttpServer<Buffer, Buffer> server;
+
+	private int localPort = -1;
+
+	public GPFDistServer(Processor<Buffer, Buffer> processor, int port, int flushCount, int flushTime, int batchTimeout, int batchCount) {
 		this.processor = processor;
 		this.port = port;
 		this.flushCount = flushCount;
 		this.flushTime = flushTime;
-		this.batchTime = batchTime;
+		this.batchTimeout = batchTimeout;
+		this.batchCount = batchCount;
 	}
 
-	public synchronized reactor.io.net.http.HttpServer<Buffer, Buffer> start() throws Exception {
+	public synchronized HttpServer<Buffer, Buffer> start() throws Exception {
 		if (server == null) {
 			server = createProtocolListener();
 		}
@@ -67,7 +76,11 @@ public class GPFDistServer {
 		server = null;
 	}
 
-	private reactor.io.net.http.HttpServer<Buffer, Buffer> createProtocolListener()
+	public int getLocalPort() {
+		return localPort;
+	}
+
+	private HttpServer<Buffer, Buffer> createProtocolListener()
 			throws Exception {
 
 		final Stream<Buffer> stream = Streams
@@ -77,6 +90,7 @@ public class GPFDistServer {
 
 			@Override
 			public Publisher<Buffer> apply(Stream<Buffer> t) {
+
 				return t.reduce(new Buffer(), new BiFunction<Buffer, Buffer, Buffer>() {
 
 					@Override
@@ -88,15 +102,14 @@ public class GPFDistServer {
 		})
 		.process(RingBufferWorkProcessor.<Buffer>create(false));
 
-		reactor.io.net.http.HttpServer<Buffer, Buffer> httpServer = NetStreams
-				.httpServer(new Function<HttpServer<Buffer, Buffer>, HttpServer<Buffer, Buffer>>() {
+		HttpServer<Buffer, Buffer> httpServer = NetStreams
+				.httpServer(new Function<HttpServerSpec<Buffer, Buffer>, HttpServerSpec<Buffer, Buffer>>() {
 
 					@Override
-					public HttpServer<Buffer, Buffer> apply(HttpServer<Buffer, Buffer> server) {
+					public HttpServerSpec<Buffer, Buffer> apply(HttpServerSpec<Buffer, Buffer> server) {
 						return server
 								.codec(new GPFDistCodec())
-								.listen(port)
-								.dispatcher(Environment.sharedDispatcher());
+								.listen(port);
 					}
 				});
 
@@ -104,6 +117,7 @@ public class GPFDistServer {
 
 			@Override
 			public Publisher<Buffer> apply(HttpChannel<Buffer, Buffer> request) {
+//				log.info("New incoming request: " + request.headers());
 				request.responseHeaders().removeTransferEncodingChunked();
 				request.addResponseHeader("Content-type", "text/plain");
 				request.addResponseHeader("Expires", "0");
@@ -111,13 +125,16 @@ public class GPFDistServer {
 				request.addResponseHeader("X-GP-PROTO", "1");
 				request.addResponseHeader("Cache-Control", "no-cache");
 				request.addResponseHeader("Connection", "close");
+
 				return stream
-						.take(batchTime, TimeUnit.SECONDS)
+						.take(batchCount)
+						.timeout(batchTimeout, TimeUnit.SECONDS, Streams.<Buffer>empty())
 						.concatWith(Streams.just(Buffer.wrap(new byte[0])));
 			}
 		});
 
 		httpServer.start().awaitSuccess();
+		localPort = httpServer.getListenAddress().getPort();
 		return httpServer;
 	}
 

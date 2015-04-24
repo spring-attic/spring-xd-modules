@@ -30,8 +30,8 @@ public class GPFDistCodec extends Codec<Buffer, Buffer, Buffer> {
 	@SuppressWarnings("resource")
 	@Override
 	public Buffer apply(Buffer t) {
-		byte[] h2 = ByteBuffer.allocate(4).putInt(t.flip().remaining()).array();
-		return new Buffer().append(h1).append(h2).append(t).flip();
+			byte[] h2 = ByteBuffer.allocate(4).putInt(t.flip().remaining()).array();
+			return new Buffer().append(h1).append(h2).append(t).flip();
 	}
 
 	@Override

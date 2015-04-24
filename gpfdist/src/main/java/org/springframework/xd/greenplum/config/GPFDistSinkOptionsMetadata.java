@@ -22,7 +22,8 @@ public class GPFDistSinkOptionsMetadata {
 	private int port = 8080;
 	private int flushCount = 100;
 	private int flushTime = 2;
-	private int batchTime = 4;
+	private int batchTimeout = 4;
+	private int batchCount = 100;
 	private int batchPeriod = 10;
 	private String dbName = "gpadmin";
 	private String dbUser = "gpadmin";
@@ -60,13 +61,13 @@ public class GPFDistSinkOptionsMetadata {
 		this.flushTime = flushTime;
 	}
 
-	public int getBatchTime() {
-		return batchTime;
+	public int getBatchTimeout() {
+		return batchTimeout;
 	}
 
-	@ModuleOption("batch time")
-	public void setBatchTime(int batchTime) {
-		this.batchTime = batchTime;
+	@ModuleOption("batch timeout")
+	public void setBatchTimeout(int batchTimeout) {
+		this.batchTimeout = batchTimeout;
 	}
 
 	public int getBatchPeriod() {
@@ -76,6 +77,15 @@ public class GPFDistSinkOptionsMetadata {
 	@ModuleOption("batch period")
 	public void setBatchPeriod(int batchPeriod) {
 		this.batchPeriod = batchPeriod;
+	}
+
+	public int getBatchCount() {
+		return batchCount;
+	}
+
+	@ModuleOption("batch count")
+	public void setBatchCount(int batchCount) {
+		this.batchCount = batchCount;
 	}
 
 	public String getDbName() {
