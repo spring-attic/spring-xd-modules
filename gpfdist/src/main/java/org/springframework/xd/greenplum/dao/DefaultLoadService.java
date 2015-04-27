@@ -24,6 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.Assert;
 import org.springframework.xd.greenplum.LoadService;
 import org.springframework.xd.greenplum.support.LoadConfiguration;
+import org.springframework.xd.greenplum.support.RuntimeContext;
 
 public class DefaultLoadService implements LoadService {
 
@@ -38,13 +39,18 @@ public class DefaultLoadService implements LoadService {
 
     @Override
     public void load(LoadConfiguration loadConfiguration) {
+    	load(loadConfiguration, null);
+    }
 
+    @Override
+    public void load(LoadConfiguration loadConfiguration, RuntimeContext context) {
     	String prefix = UUID.randomUUID().toString().replaceAll("-", "_");
 
         // setup jdbc operations
         CleanableJdbcOperations operations = new CleanableJdbcOperations(jdbcTemplate);
 
-        String sqlCreateTable = SqlUtils.createExternalReadableTable(loadConfiguration, prefix);
+		String sqlCreateTable = SqlUtils.createExternalReadableTable(loadConfiguration, prefix,
+				context != null ? context.getLocations() : null);
         String sqlDropTable = SqlUtils.dropExternalReadableTable(loadConfiguration, prefix);
 
         operations.add(sqlCreateTable, sqlDropTable);
@@ -73,8 +79,6 @@ public class DefaultLoadService implements LoadService {
                 throw dae;
             }
         }
-
     }
-
 
 }

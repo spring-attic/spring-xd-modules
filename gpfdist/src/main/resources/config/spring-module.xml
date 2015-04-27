@@ -30,6 +30,7 @@
 		<beans:constructor-arg value="${batchCount}"/>
 		<beans:constructor-arg value="${batchPeriod}"/>
 		<beans:constructor-arg value="${delimiter}"/>
+        <beans:property name="rateInterval" value="${rateInterval}" />
         <beans:property name="greenplumLoad" ref="greenplumLoad" />
         <beans:property name="sqlTaskScheduler" ref="sqlTaskScheduler" />
 	</beans:bean>

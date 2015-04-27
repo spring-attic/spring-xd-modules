@@ -40,8 +40,9 @@ Information about sink module 'gpfdist':
 
   Option Name  Description                                           Default    Type
   -----------  ----------------------------------------------------- ---------  --------
+  batchCount   batch count                                           100        int
   batchPeriod  batch period                                          10         int
-  batchTime    batch time                                            4          int
+  batchTimeout batch timeout                                         4          int
   controlFile  path to yaml control file                             <none>     String
   dbHost       database host                                         localhost  String
   dbName       database name                                         gpadmin    String
@@ -51,7 +52,8 @@ Information about sink module 'gpfdist':
   delimiter    data line delimiter                                   "\n"       String
   flushCount   flush item count                                      100        int
   flushTime    flush item time                                       2          int
-  port         gpfdist listen port                                   8080       int
+  port         gpfdist listen port                                   0          int
+  rateInterval enable transfer rate interval                         0          int
   table        target database table                                 <none>     String
 ----
 
@@ -67,14 +69,17 @@ an external table each segment will initiate a http connection and
 starts loading data. When these segment come and goes, data is
 automatically spread among these segments.
 
-`batchTime` defines how many seconds each http connection should be
-kept alive until it is kicked out. This gives an rough estimation how
-long each external load operation lasts.
-
 `flushCount` and `flushTime` are using within a reactor stream to
 flush aggregated stream into a http channel. Too high values and
 memory concumption will go up, too small values and not very much
 traffic will cause things to end up into database less frequently.
+
+`batchCount` defines maximum count of aggregated windows client
+takes before stream and http channel is closed.
+
+`batchTimeout` defines how many seconds each http connection should be
+kept alive if no data is streamed to a client. Use this together with
+`batchCount` to estimate how long each loading session should last.
 
 `batchPeriod` defines how many seconds a task running load operation
 should sleep in between a loads.
@@ -84,6 +89,8 @@ because Greenplum expects line terminated data.
 
 `controlFile` can be used to introduce more parameters for load
 operation. For simple use cases `table` property can be used.
+
+`rateInterval` if set enables rate logging passing through sink.
 
 It is also worth to mention that nothing is written into temporary
 files and all data is kept in stream buffers waiting to get send into

@@ -28,6 +28,8 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.StringUtils;
 import org.springframework.util.concurrent.SettableListenableFuture;
 import org.springframework.xd.greenplum.GreenplumLoad;
+import org.springframework.xd.greenplum.support.NetworkUtils;
+import org.springframework.xd.greenplum.support.RuntimeContext;
 
 import reactor.Environment;
 import reactor.core.processor.RingBufferProcessor;
@@ -64,10 +66,12 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 	private final TaskFuture taskFuture = new TaskFuture();
 
 	// TODO: just for this poc to get perf numbers
-	private Meter meter = new Meter();
+	private int rateInterval = 0;
+	private Meter meter = null;
 	private int meterCount = 0;
 
-	public GPFDistMessageHandler(int port, int flushCount, int flushTime, int batchTimeout, int batchCount, int batchPeriod, String delimiter) {
+	public GPFDistMessageHandler(int port, int flushCount, int flushTime, int batchTimeout, int batchCount,
+			int batchPeriod, String delimiter) {
 		super();
 		this.port = port;
 		this.flushCount = flushCount;
@@ -88,9 +92,11 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 			} else {
 				processor.onNext(Buffer.wrap(data));
 			}
-			if ((meterCount++ % 100000) == 0) {
-				meter.mark(100000);
-				log.info("METER 1m/" + meter.getOneMinuteRate() + " mean/" + meter.getMeanRate());
+			if (meter != null) {
+				if ((meterCount++ % rateInterval) == 0) {
+					meter.mark(rateInterval);
+					log.info("METER 1m/" + meter.getOneMinuteRate() + " mean/" + meter.getMeanRate());
+				}
 			}
 		} else {
 			throw new MessageHandlingException(message, "message not a String");
@@ -118,6 +124,9 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 		if (greenplumLoad != null) {
 			log.info("Scheduling gpload task with batchPeriod=" + batchPeriod);
 
+			final RuntimeContext context = new RuntimeContext();
+			context.addLocation(NetworkUtils.getGPFDistUri(gpfdistServer.getLocalPort()));
+
 			sqlTaskScheduler.schedule((new FutureTask<Void>(new Runnable() {
 				@Override
 				public void run() {
@@ -125,7 +134,7 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 					try {
 						while(!taskFuture.interrupted) {
 							try {
-								greenplumLoad.load();
+								greenplumLoad.load(context);
 							} catch (Exception e) {
 								log.error("Error in load", e);
 							}
@@ -171,6 +180,13 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 
 	public void setGreenplumLoad(GreenplumLoad greenplumLoad) {
 		this.greenplumLoad = greenplumLoad;
+	}
+
+	public void setRateInterval(int rateInterval) {
+		this.rateInterval = rateInterval;
+		if (rateInterval > 0) {
+			meter = new Meter();
+		}
 	}
 
 	private static class TaskFuture extends SettableListenableFuture<Boolean> {

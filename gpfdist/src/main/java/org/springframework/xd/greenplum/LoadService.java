@@ -16,9 +16,12 @@
 package org.springframework.xd.greenplum;
 
 import org.springframework.xd.greenplum.support.LoadConfiguration;
+import org.springframework.xd.greenplum.support.RuntimeContext;
 
 public interface LoadService {
 
 	public void load(LoadConfiguration loadConfiguration);
+
+	public void load(LoadConfiguration loadConfiguration, RuntimeContext context);
 
 }

@@ -15,6 +15,8 @@
  */
 package org.springframework.xd.greenplum.dao;
 
+import java.util.List;
+
 import org.springframework.util.StringUtils;
 import org.springframework.xd.greenplum.support.Format;
 import org.springframework.xd.greenplum.support.LoadConfiguration;
@@ -23,7 +25,7 @@ import org.springframework.xd.greenplum.support.ReadableTable;
 
 public abstract class SqlUtils {
 
-	public static String createExternalReadableTable(LoadConfiguration config, String prefix) {
+	public static String createExternalReadableTable(LoadConfiguration config, String prefix, List<String> overrideLocations) {
 
 		// TODO: this function needs a cleanup
 		StringBuilder buf = new StringBuilder();
@@ -49,7 +51,11 @@ public abstract class SqlUtils {
 
 		// locations
 		buf.append("LOCATION(");
-		buf.append(createLocationString(externalTable.getLocations().toArray(new String[0])));
+		if (overrideLocations != null && !overrideLocations.isEmpty()) {
+			buf.append(createLocationString(overrideLocations.toArray(new String[0])));
+		} else {
+			buf.append(createLocationString(externalTable.getLocations().toArray(new String[0])));
+		}
 		buf.append(") ");
 
 		// format type

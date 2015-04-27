@@ -13,14 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.xd.greenplum;
+package org.springframework.xd.greenplum.support;
 
-import org.springframework.xd.greenplum.support.RuntimeContext;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface GreenplumLoad {
+/**
+ * Runtime context for load operations.
+ *
+ * @author Janne Valkealahti
+ *
+ */
+public class RuntimeContext {
 
-	public void load();
+	private final List<String> locations = new ArrayList<String>();
 
-	public void load(RuntimeContext context);
+	public List<String> getLocations() {
+		return locations;
+	}
+
+	public void setLocations(List<String> locations) {
+		this.locations.clear();
+		this.locations.addAll(locations);
+	}
+
+	public void addLocation(String location) {
+		this.locations.add(location);
+	}
 
 }

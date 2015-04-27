@@ -38,8 +38,13 @@ public class DefaultGreenplumLoad implements GreenplumLoad {
 
 	@Override
 	public void load() {
+		load(null);
+	}
+
+	@Override
+	public void load(RuntimeContext context) {
 		log.debug("Doing greenplum load");
-		loadService.load(loadConfiguration);
+		loadService.load(loadConfiguration, context);
 	}
 
 }

@@ -39,6 +39,12 @@ description = "Spring XD Greenplum/HAWQ gpfdist sink module"
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
+test {
+    if (!project.hasProperty('testIT')) {
+        exclude '**/*IT*'
+    }
+}
+
 dependencies {
 
     compile "io.projectreactor:reactor-core:${reactorVersion}"
@@ -51,6 +57,7 @@ dependencies {
     testCompile "org.springframework:spring-test"
     testCompile "org.mockito:mockito-core"
     testCompile "org.hamcrest:hamcrest-library"
+    testRuntime "io.netty:netty-all:4.0.18.Final"
 //    testCompile "junit:junit:$junitVersion"
 //    testCompile "org.springframework:spring-test:$springVersion"
 //    testCompile "org.mockito:mockito-core:$mockitoVersion"

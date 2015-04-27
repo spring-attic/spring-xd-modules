@@ -53,7 +53,8 @@ public class GPFDistServer {
 
 	private int localPort = -1;
 
-	public GPFDistServer(Processor<Buffer, Buffer> processor, int port, int flushCount, int flushTime, int batchTimeout, int batchCount) {
+	public GPFDistServer(Processor<Buffer, Buffer> processor, int port, int flushCount, int flushTime,
+			int batchTimeout, int batchCount) {
 		this.processor = processor;
 		this.port = port;
 		this.flushCount = flushCount;
@@ -117,7 +118,6 @@ public class GPFDistServer {
 
 			@Override
 			public Publisher<Buffer> apply(HttpChannel<Buffer, Buffer> request) {
-//				log.info("New incoming request: " + request.headers());
 				request.responseHeaders().removeTransferEncodingChunked();
 				request.addResponseHeader("Content-type", "text/plain");
 				request.addResponseHeader("Expires", "0");
@@ -134,6 +134,7 @@ public class GPFDistServer {
 		});
 
 		httpServer.start().awaitSuccess();
+		log.info("Server running using address=[" + httpServer.getListenAddress() + "]");
 		localPort = httpServer.getListenAddress().getPort();
 		return httpServer;
 	}

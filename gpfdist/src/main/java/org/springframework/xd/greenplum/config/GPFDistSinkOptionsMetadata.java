@@ -19,7 +19,7 @@ import org.springframework.xd.module.options.spi.ModuleOption;
 
 public class GPFDistSinkOptionsMetadata {
 
-	private int port = 8080;
+	private int port = 0;
 	private int flushCount = 100;
 	private int flushTime = 2;
 	private int batchTimeout = 4;
@@ -33,6 +33,7 @@ public class GPFDistSinkOptionsMetadata {
 	private String controlFile;
 	private String delimiter = "\n";
 	private String table;
+	private int rateInterval = 0;
 
 	public int getPort() {
 		return port;
@@ -158,6 +159,15 @@ public class GPFDistSinkOptionsMetadata {
 	@ModuleOption("target database table")
 	public void setTable(String table) {
 		this.table = table;
+	}
+
+	public int getRateInterval() {
+		return rateInterval;
+	}
+
+	@ModuleOption("enable transfer rate interval")
+	public void setRateInterval(int rateInterval) {
+		this.rateInterval = rateInterval;
 	}
 
 }

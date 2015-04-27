@@ -29,6 +29,7 @@ import reactor.fn.Function;
 import reactor.io.buffer.Buffer;
 import reactor.io.net.NetStreams;
 import reactor.io.net.Spec.HttpServerSpec;
+import reactor.io.net.http.HttpServer;
 
 public class TestListenAddress {
 
@@ -36,7 +37,7 @@ public class TestListenAddress {
 	public void testBindZero() throws Exception {
 		Environment.initializeIfEmpty().assignErrorJournal();
 
-		reactor.io.net.http.HttpServer<Buffer, Buffer> httpServer = NetStreams
+		HttpServer<Buffer, Buffer> httpServer = NetStreams
 				.httpServer(new Function<HttpServerSpec<Buffer, Buffer>, HttpServerSpec<Buffer, Buffer>>() {
 
 					@Override
