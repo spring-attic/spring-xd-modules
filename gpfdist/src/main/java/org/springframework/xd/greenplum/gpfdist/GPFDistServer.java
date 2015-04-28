@@ -27,6 +27,7 @@ import reactor.fn.BiFunction;
 import reactor.fn.Function;
 import reactor.io.buffer.Buffer;
 import reactor.io.net.NetStreams;
+import reactor.io.net.ReactorChannelHandler;
 import reactor.io.net.Spec.HttpServerSpec;
 import reactor.io.net.http.HttpChannel;
 import reactor.io.net.http.HttpServer;
@@ -114,10 +115,10 @@ public class GPFDistServer {
 					}
 				});
 
-		httpServer.get("/data", new Function<HttpChannel<Buffer, Buffer>, Publisher<Buffer>>(){
+		httpServer.get("/data", new ReactorChannelHandler<Buffer, Buffer, HttpChannel<Buffer,Buffer>>() {
 
 			@Override
-			public Publisher<Buffer> apply(HttpChannel<Buffer, Buffer> request) {
+			public Publisher<Void> apply(HttpChannel<Buffer, Buffer> request) {
 				request.responseHeaders().removeTransferEncodingChunked();
 				request.addResponseHeader("Content-type", "text/plain");
 				request.addResponseHeader("Expires", "0");
@@ -126,10 +127,10 @@ public class GPFDistServer {
 				request.addResponseHeader("Cache-Control", "no-cache");
 				request.addResponseHeader("Connection", "close");
 
-				return stream
+				return request.writeWith(stream
 						.take(batchCount)
 						.timeout(batchTimeout, TimeUnit.SECONDS, Streams.<Buffer>empty())
-						.concatWith(Streams.just(Buffer.wrap(new byte[0])));
+						.concatWith(Streams.just(Buffer.wrap(new byte[0]))));
 			}
 		});
 
