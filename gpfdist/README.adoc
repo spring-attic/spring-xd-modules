@@ -1,0 +1,138 @@
+= Greenplum GPFDist Sink Module
+
+Is a sink that create a custom http listener supporting a `gpfdist` protocol. Data sent to a sink from a source is then put into a reactor stream where it can be flushed by issuing load commands from Greenplum external tables. Internally this sink is scheduling a task which is orchestrating a `gpload` session in a same way it's done natively in Greenplum.
+
+NOTE: This is currently work in progress so expect issues until bugs
+are ironed out.
+
+== Requirements
+
+In order to install the module and run it in your Spring XD installation, you will need to have installed:
+
+* Spring XD version 1.1.x ([Instructions](http://docs.spring.io/spring-xd/docs/current/reference/html/#getting-started))
+
+## Building with Gradle
+
+[source,text]
+----
+$./gradlew build
+----
+
+The project's [build.gradle](build.gradle) applies the `spring-xd-module` plugin, providing analagous build and packaging support for gradle. This plugin also applies the [Spring Boot Gradle Plugin](http://docs.spring.io/spring-boot/docs/current/reference/html/build-tool-plugins-gradle-plugin.html) as well as the [propdeps plugin](https://github.com/spring-projects/gradle-plugins/tree/master/propdeps-plugin). 
+
+== Using the Custom Module
+
+The uber-jar will be in `[project-build-dir]/gpfdist-1.0.0.BUILD-SNAPSHOT.jar`. To install and register the module to your Spring XD distribution, use the `module upload` Spring XD shell command. Start Spring XD and the shell:
+
+
+[source,text]
+----
+xd:>module upload --file [path-to]/gpfdist-1.0.0.BUILD-SNAPSHOT.jar --name gpfdist --type sink
+Successfully uploaded module 'sink:throughput'
+----
+
+
+You can also get information about the available module options:
+
+----
+xd:>module info --name sink:gpfdist
+Information about sink module 'gpfdist':
+
+  Option Name  Description                                           Default    Type
+  -----------  ----------------------------------------------------- ---------  --------
+  batchCount   batch count                                           100        int
+  batchPeriod  batch period                                          10         int
+  batchTimeout batch timeout                                         4          int
+  controlFile  path to yaml control file                             <none>     String
+  dbHost       database host                                         localhost  String
+  dbName       database name                                         gpadmin    String
+  dbPassword   database password                                     gpadmin    String
+  dbPort       database port                                         5432       int
+  dbUser       database user                                         gpadmin    String
+  delimiter    data line delimiter                                   "\n"       String
+  flushCount   flush item count                                      100        int
+  flushTime    flush item time                                       2          int
+  port         gpfdist listen port                                   0          int
+  rateInterval enable transfer rate interval                         0          int
+  table        target database table                                 <none>     String
+----
+
+== How This Works
+
+Within a `gpfdist` sink we have a reactor based stream where data is
+published from incoming SI channel. This channel is the one which
+connects various XD modules together. Reactor stream is then connected
+to `Netty` based http channel adapters in a way that when new http
+connection is established stream is flushed and balanced among
+existing http clients. Effectively when `Greenplum` does a load from
+an external table each segment will initiate a http connection and
+starts loading data. When these segment come and goes, data is
+automatically spread among these segments.
+
+`flushCount` and `flushTime` are using within a reactor stream to
+flush aggregated stream into a http channel. Too high values and
+memory concumption will go up, too small values and not very much
+traffic will cause things to end up into database less frequently.
+
+`batchCount` defines maximum count of aggregated windows client
+takes before stream and http channel is closed.
+
+`batchTimeout` defines how many seconds each http connection should be
+kept alive if no data is streamed to a client. Use this together with
+`batchCount` to estimate how long each loading session should last.
+
+`batchPeriod` defines how many seconds a task running load operation
+should sleep in between a loads.
+
+`delimiter` is used to postfix incoming data with a line termination
+because Greenplum expects line terminated data.
+
+`controlFile` can be used to introduce more parameters for load
+operation. For simple use cases `table` property can be used.
+
+`rateInterval` if set enables rate logging passing through sink.
+
+It is also worth to mention that nothing is written into temporary
+files and all data is kept in stream buffers waiting to get send into
+downstream where it ends up into a database. If there are no existing
+load sessions from Greenplum, internal reactor streams will simply
+block which prevents further memory problems in XD.
+
+== Demo Run
+
+`load-generator-string` source can be used to send dummy test data
+into `gpfdist` sink.
+
+[source,text]
+----
+create table xdsink (date text, time text);
+----
+
+Database table is created with above commend while expecting
+`load-generator-string` to send two string fields separated with a
+tab which is a default field separator with text data.
+
+[source,text]
+----
+xd:>stream create --name gpfdiststream --definition "load-generator-string --messageCount=10000000 --producers=1 |gpfdist --dbHost=mdw --table=xdsink --batchTime=5 --batchPeriod=1 --flushCount=200 --flushTime=2" --deploy
+Created and deployed new stream 'gpfdiststream'
+----
+
+What happens with above XD stream is that we send 10M messages from
+`load-generator-string` to `gpfdist`. We roughly keep load session
+alive for 5 seconds while flushing data after 2s or 200 entries which
+comes first. Then we simply sleep 1s in between a load sessions.
+
+[source,text]
+----
+2015-04-02 09:48:38,517 1.1.1.RELEASE  INFO sqlTaskScheduler-1 dao.CleanableJdbcOperations - CREATE READABLE EXTERNAL TABLE xdsink_ext_9a29d120_4770_4075_aa3c_b921b65de2a3 ( LIKE xdsink ) LOCATION('gpfdist://172.16.101.1:8080/data') FORMAT 'TEXT' ( DELIMITER '\u0009' )
+
+2015-04-02 09:48:39,193 1.1.1.RELEASE  INFO pool-11-thread-1 gpfdist.GPFDistMessageHandler - METER 1m/273831.9383288609 mean/246811.59421515238
+
+2015-04-02 09:48:44,350 1.1.1.RELEASE  INFO sqlTaskScheduler-1 dao.CleanableJdbcOperations - DROP EXTERNAL TABLE xdsink_ext_9a29d120_4770_4075_aa3c_b921b65de2a3
+----
+
+`gpfdist` sink currently contains a throughput meter for this POC to
+get perf numbers. For example in this case it is showing about 270K
+messages per second to be transferred from XD into Greenplum.
+
