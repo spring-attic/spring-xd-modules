@@ -167,6 +167,7 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 		}
 
 		try {
+			processor.onComplete();
 			gpfdistServer.stop();
 		} catch (Exception e) {
 			log.warn("Error shutting down protocol listener", e);
