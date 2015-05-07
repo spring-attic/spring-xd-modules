@@ -1,0 +1,10 @@
+target/
+bin/
+META-INF/
+spring-shell.log
+.settings/
+.project/
+.gradle/
+.classpath
+.project
+build/
