@@ -13,7 +13,6 @@ public class XsltTransformerOptionsMetaData {
 
 	@ModuleOption("XSLT File that will be processing the incoming message data.")
 	public void setXslt(String xslt) {
-		System.out.println("xsltFile passed... "+xslt);
 		this.xslt = xslt;
 	}
 
