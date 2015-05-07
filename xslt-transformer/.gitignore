@@ -1,0 +1,12 @@
+target/
+bin/
+META-INF/
+spring-shell.log
+.settings/
+.project/
+.classpath
+.project
+.idea
+*.iml
+.DS_Store
+build/
