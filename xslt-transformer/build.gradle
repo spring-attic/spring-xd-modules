@@ -17,10 +17,10 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'spring-xd-module'
 
-group = 'com.acme'
+group = 'org.springframework.xd.xslttransformer'
 version = '1.0.0.BUILD-SNAPSHOT'
 
-description = "Spring XD XSL Transformer module"
+description = "Spring XD XSLT Transformer module"
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7

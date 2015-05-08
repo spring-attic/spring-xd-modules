@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.acme;
+package org.springframework.xd.xslttransformer;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;

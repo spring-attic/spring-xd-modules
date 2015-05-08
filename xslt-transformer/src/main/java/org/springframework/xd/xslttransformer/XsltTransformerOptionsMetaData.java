@@ -1,4 +1,4 @@
-package com.acme;
+package org.springframework.xd.xslttransformer;
 
 
 

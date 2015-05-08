@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package com.acme;
+package org.springframework.xd.xslttransformer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
