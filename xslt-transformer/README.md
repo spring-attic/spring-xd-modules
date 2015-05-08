@@ -68,7 +68,7 @@ Now copy the sample test.xsl XSLT file under `xslt-transformer/src/test/resource
 
 Now create and deploy the stream:
 
-	xd:>stream create test --definition "http |xslt-transformer --xslt='test.xslt' | log" --deploy
+	xd:>stream create test --definition "http |xslt-transformer --xslt='test.xsl' | log" --deploy
 
 ***Assuming your test file in the ```scripts``` folder is called test.xslt***
 
