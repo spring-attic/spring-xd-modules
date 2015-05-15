@@ -39,14 +39,14 @@ The uber-jar will be in `[project-build-dir]/load-generator-string-source-1.0.0.
 	eXtreme Data
 	1.1.0.BUILD-SNAPSHOT | Admin Server Target: http://localhost:9393
 	Welcome to the Spring XD shell. For assistance hit TAB or type "help".
-	xd:>module upload --file [path-to]/load-generator-string-source-1.0.0.BUILD-SNAPSHOT.jar --name load-generator-string --type source
+	xd:>module upload --file [path-to]/load-generator-gpfdist-source-1.0.0.BUILD-SNAPSHOT.jar --name load-generator-gpfdist --type source
 	Successfully uploaded module 'source:load-generator-string'
 	xd:>
 
 
 You can also get information about the available module options:
 
-xd:>module info --name source:load-generator-string
+xd:>module info --name source:load-generator-gpfdist
 Information about source module 'load-generator-string':
 
   Option Name      Description                                       Default  Type

@@ -26,7 +26,7 @@ task wrapper(type: Wrapper) {
     gradleVersion = '1.12'
 }
 
-group = 'org.springframework.xd.load.generator'
+group = 'org.springframework.xd.load.generator.gpfdist'
 version = '1.0.0.BUILD-SNAPSHOT'
 
 description = "Spring XD load-generator gpfdist source module"
