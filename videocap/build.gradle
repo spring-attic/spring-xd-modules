@@ -1,0 +1,34 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven'
+
+group = 'org.springframework.xd.videocap'
+
+sourceCompatibility = 1.7
+
+group = 'org.springframework.xd.videocap'
+version = '1.0.0.BUILD-SNAPSHOT'
+description = "Spring XD video capture source module"
+
+
+task wrapper(type: Wrapper) {
+	gradleVersion = '1.12'
+}
+repositories {
+	maven { url "http://repo.spring.io/release" }
+	mavenCentral()
+}
+
+dependencies {
+ 	compile "org.springframework.integration:spring-integration-core:4.0.2.RELEASE"
+ 	compile "org.springframework.xd:spring-xd-module-spi:1.1.2.RELEASE"
+	compile fileTree('lib')
+}
+
+jar {
+	from {
+    	zipTree('lib/opencv-249.jar')
+    }
+}
+	
