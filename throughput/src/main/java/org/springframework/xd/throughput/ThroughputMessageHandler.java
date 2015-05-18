@@ -34,7 +34,7 @@ import org.springframework.messaging.MessagingException;
  * @author Eric Bottard
  * @author Marius Bogoevici
  */
-public class ThroughputMessageHandler implements MessageHandler, Lifecycle {
+public class ThroughputMessageHandler implements Lifecycle {
 
 	private Logger logger;
 
@@ -82,8 +82,7 @@ public class ThroughputMessageHandler implements MessageHandler, Lifecycle {
 		return running;
 	}
 
-	@Override
-	public void handleMessage(Message<?> message) throws MessagingException {
+	public Message<?> handleMessage(Message<?> message) throws MessagingException {
 		if (start.get() == -1L) {
 			synchronized (start) {
 				if (start.get() == -1L) {
@@ -108,6 +107,7 @@ public class ThroughputMessageHandler implements MessageHandler, Lifecycle {
 				intermediateBytes.addAndGet((((String) payload).getBytes()).length);
 			}
 		}
+		return message;
 	}
 
 	/**
