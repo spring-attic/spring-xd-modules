@@ -44,7 +44,7 @@ public class VideocapOptionsMetadata {
 		return pollingDelay;
 	}
 
-	@ModuleOption(value = "the delay(ms) between pollings", defaultValue = "0")
+	@ModuleOption(value = "the delay(ms) between pollings")
 	public void setPollingDelay(int pollingDelay) {
 		this.pollingDelay = pollingDelay;
 	}
