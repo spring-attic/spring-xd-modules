@@ -17,6 +17,11 @@
 		<property name="logger" value="${logger}" />
 	</bean>
 
-	<int:service-activator input-channel="input" output-channel="output" auto-startup="false" ref="throughputMessageHandler" method="handleMessage"/>
+	<int:chain input-channel="input" output-channel="output">
+		<int:service-activator ref="throughputMessageHandler"/>
+		<int:service-activator ref="throughputMessageHandler"/>
+		<int:service-activator ref="throughputMessageHandler"/>
+	</int:chain>
+
 
 </beans>

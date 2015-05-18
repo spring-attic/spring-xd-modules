@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.context.Lifecycle;
+import org.springframework.integration.handler.MessageProcessor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
@@ -34,7 +35,7 @@ import org.springframework.messaging.MessagingException;
  * @author Eric Bottard
  * @author Marius Bogoevici
  */
-public class ThroughputMessageHandler implements Lifecycle {
+public class ThroughputMessageHandler implements MessageProcessor<Message<?>>, Lifecycle {
 
 	private Logger logger;
 
@@ -82,31 +83,7 @@ public class ThroughputMessageHandler implements Lifecycle {
 		return running;
 	}
 
-	public Message<?> handleMessage(Message<?> message) throws MessagingException {
-		if (start.get() == -1L) {
-			synchronized (start) {
-				if (start.get() == -1L) {
-					// assume a homogeneous message structure - this is intended for perf tests so we can safely assume
-					// that the messages are similar,  Therefore we'll do our reporting based on the first message
-					Object payload = message.getPayload();
-					if (payload instanceof byte[] || payload instanceof String) {
-						reportBytes = true;
-					}
-					start.set(clock.now());
-					executorService.execute(new ReportStats());
-				}
-			}
-		}
-		intermediateCounter.incrementAndGet();
-		if (reportBytes) {
-			Object payload = message.getPayload();
-			if (payload instanceof byte[]) {
-				intermediateBytes.addAndGet(((byte[]) payload).length);
-			}
-			else if (payload instanceof String) {
-				intermediateBytes.addAndGet((((String) payload).getBytes()).length);
-			}
-		}
+	public Message<?> processMessage(Message<?> message) throws MessagingException {
 		return message;
 	}
 
