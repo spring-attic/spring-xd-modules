@@ -16,6 +16,10 @@
 
 package org.springframework.xd.videocap;
 
+import java.util.concurrent.TimeUnit;
+
+import nu.pattern.OpenCV;
+
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.highgui.Highgui;
@@ -25,60 +29,68 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.integration.core.MessageSource;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
-
+import org.springframework.util.Assert;
 
 /**
-* Message producer that reads from video source, and generates messages 
-* with captured frame images which are JPEG-encoded   
-*
-* @author Simon Tao
-* 
-*/
+ * Message producer that reads from a video source, and generates messages with captured frames encoded as JPEG images.
+ *
+ * @author Simon Tao
+ * @author Thomas Darimont
+ */
 public class VideocapChannelAdapter implements MessageSource<byte[]>, InitializingBean, DisposableBean {
 
-	private static final String OPENCV_LIBPATH= "/usr/local/share/OpenCV/java/libopencv_java249.so";
-	
 	static {
-		System.load(OPENCV_LIBPATH);
+		OpenCV.loadLibrary();
 	}
-	
-	private String sourceUrl;
-	
+
+	private final String sourceUrl;
+
 	private VideoCapture capture;
 
+	/**
+	 * Creates a new {@link VideocapChannelAdapter} from the given {@code sourceUrl}.
+	 * 
+	 * @param sourceUrl must not be {@literal null}.
+	 */
 	public VideocapChannelAdapter(String sourceUrl) {
-		super();
+
+		Assert.notNull(sourceUrl, "SourceUrl must not be null!");
+
 		this.sourceUrl = sourceUrl;
 	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
+
 		capture = new VideoCapture(sourceUrl);
-		if(!capture.isOpened()) { 
-			throw new Exception("Can not access video source: " +  sourceUrl);
+
+		Assert.isTrue(capture.isOpened(), "Can not access video source: " + sourceUrl);
+	}
+
+	@Override
+	public void destroy() throws Exception {
+
+		if (capture == null) {
+			return;
+		}
+
+		if (capture.isOpened()) {
+			capture.release();
 		}
 	}
 
 	@Override
 	public Message<byte[]> receive() {
+
 		Mat image = new Mat();
-		if (capture.read(image)) {
-			MatOfByte mob = new MatOfByte();
-			Highgui.imencode(".jpeg", image, mob);
-			byte[] content = mob.toArray();
-
-			if (content != null) {
-				return MessageBuilder.withPayload(content).build();
-			}
+		if (!capture.read(image)) {
+			return null;
 		}
-		return null;
-	}
 
-	@Override
-	public void destroy() throws Exception {
-		if ((capture != null) && capture.isOpened()) {
-			capture.release();
-		}
+		MatOfByte mob = new MatOfByte();
+		Highgui.imencode(".jpeg", image, mob);
+		byte[] content = mob.toArray();
+
+		return MessageBuilder.withPayload(content).build();
 	}
-		
 }

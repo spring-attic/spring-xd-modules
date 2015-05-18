@@ -16,22 +16,25 @@
 
 package org.springframework.xd.videocap;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.xd.module.options.spi.ModuleOption;
 
-
 /**
-* Documents the options of the videocap module.
-*
-* @author Simon Tao
-*/
+ * Documents the options of the videocap module.
+ *
+ * @author Simon Tao
+ */
 public class VideocapOptionsMetadata {
+
 	private String sourceUrl;
-	private int pollingDelay = 0;
-	
+	private int pollingDelay;
+
+	@NotNull
 	public String getSourceUrl() {
 		return sourceUrl;
 	}
-	
+
 	@ModuleOption("the url of the video source, either from camera or file")
 	public void setSourceUrl(String sourceUrl) {
 		this.sourceUrl = sourceUrl;
@@ -41,9 +44,8 @@ public class VideocapOptionsMetadata {
 		return pollingDelay;
 	}
 
-	@ModuleOption("the delay(ms) between pollings")
+	@ModuleOption(value = "the delay(ms) between pollings", defaultValue = "0")
 	public void setPollingDelay(int pollingDelay) {
 		this.pollingDelay = pollingDelay;
 	}
-
 }
