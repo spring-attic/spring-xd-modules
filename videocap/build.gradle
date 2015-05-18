@@ -1,34 +1,35 @@
+buildscript {
+	repositories {
+		maven { url "http://repo.spring.io/plugins-snapshot" }
+		maven { url "http://repo.spring.io/release" }
+		jcenter()
+		maven { url "http://repo.spring.io/snapshot" }
+		maven { url "http://repo.spring.io/milestone" }
+	}
+	dependencies { classpath("org.springframework.xd:spring-xd-module-plugin:${springXdVersion}") }
+}
+
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'maven'
-
-group = 'org.springframework.xd.videocap'
+apply plugin: 'spring-xd-module'
 
 sourceCompatibility = 1.7
+targetCompatibility = 1.7
 
 group = 'org.springframework.xd.videocap'
-version = '1.0.0.BUILD-SNAPSHOT'
 description = "Spring XD video capture source module"
 
-
-task wrapper(type: Wrapper) {
-	gradleVersion = '1.12'
-}
 repositories {
 	maven { url "http://repo.spring.io/release" }
-	mavenCentral()
+	jcenter()
+	maven { url "http://repo.spring.io/snapshot" }
+	maven { url "http://repo.spring.io/milestone" }
 }
 
 dependencies {
- 	compile "org.springframework.integration:spring-integration-core:4.0.2.RELEASE"
- 	compile "org.springframework.xd:spring-xd-module-spi:1.1.2.RELEASE"
-	compile fileTree('lib')
+	compile "org.springframework.integration:spring-integration-core:${springIntegrationVersion}"
+	compile "org.springframework.xd:spring-xd-module-spi:${springXdVersion}"
+	provided "nu.pattern:opencv:${opencvVersion}"
 }
-
-jar {
-	from {
-    	zipTree('lib/opencv-249.jar')
-    }
-}
-	
