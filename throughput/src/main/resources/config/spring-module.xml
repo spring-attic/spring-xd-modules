@@ -7,7 +7,7 @@
 		http://www.springframework.org/schema/integration
 		http://www.springframework.org/schema/integration/spring-integration.xsd">
 
-    <int:channel id="input"/>
+	<int:channel id="input" fixed-subscriber="true" />
 
 	<bean id="throughputMessageHandler" class="org.springframework.xd.throughput.ThroughputMessageHandler">
 		<property name="reportEveryMs" value="${reportEveryMs}" />

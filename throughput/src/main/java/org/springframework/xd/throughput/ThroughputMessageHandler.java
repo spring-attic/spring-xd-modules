@@ -52,7 +52,7 @@ public class ThroughputMessageHandler implements MessageHandler, Lifecycle {
 
 	private TimeUnit timeUnit = TimeUnit.s;
 
-	private Clock clock = new Clock();
+	private final Clock clock = new Clock();
 
 	private volatile boolean running;
 
@@ -135,14 +135,12 @@ public class ThroughputMessageHandler implements MessageHandler, Lifecycle {
 		@Override
 		public void run() {
 			while (isRunning()) {
-				intermediateCounter.set(0L);
-				intermediateBytes.set(0L);
 				long intervalStart = clock.now();
 				try {
 					Thread.sleep(reportEveryMs);
 					long timeNow = clock.now();
-					long currentCounter = intermediateCounter.get();
-					long currentBytes = intermediateBytes.get();
+					long currentCounter = intermediateCounter.getAndSet(0L);
+					long currentBytes = intermediateBytes.getAndSet(0L);
 					long totalCounter = counter.addAndGet(currentCounter);
 					long totalBytes = bytes.addAndGet(currentBytes);
 
@@ -159,11 +157,11 @@ public class ThroughputMessageHandler implements MessageHandler, Lifecycle {
 								String.format("Throughput: %12d in %5.2f%s = %11.2fMB/s, ",
 										currentBytes,
 										(timeNow - intervalStart)/ 1000.0, timeUnit,
-										(((double) currentBytes / (1024.0 * 1024)) * 1000 / reportEveryMs)));
+										((currentBytes / (1024.0 * 1024)) * 1000 / reportEveryMs)));
 						logger.info(
 								String.format("Throughput: %12d in %5.2f%s = %11.2fMB/s",
 										totalBytes, (timeNow - start.get()) / 1000.0, timeUnit,
-										(((double) totalBytes / (1024.0 * 1024)) * 1000 / (timeNow - start.get()))));
+										((totalBytes / (1024.0 * 1024)) * 1000 / (timeNow - start.get()))));
 					}
 				}
 				catch (InterruptedException e) {
