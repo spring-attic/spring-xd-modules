@@ -15,12 +15,6 @@
 
 package org.springframework.xd.loadgenerator;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.integration.endpoint.MessageProducerSupport;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -28,6 +22,13 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.integration.endpoint.MessageProducerSupport;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 
 /**
  * Is a source module that generates a series of fixed size messages to be
@@ -40,13 +41,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class LoadGenerator extends MessageProducerSupport {
 
-    private int producers;
+    private static final TestMessageHeaders HEADERS = new TestMessageHeaders(null);
 
-    private int messageSize;
+    private final int producers;
 
-    private int messageCount;
+    private final int messageSize;
 
-    private boolean generateTimestamp;
+    private final int messageCount;
+
+    private final boolean generateTimestamp;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -141,7 +144,7 @@ public class LoadGenerator extends MessageProducerSupport {
 
             public TestMessage(byte[] message) {
                 this.message = message;
-                this.headers = new TestMessageHeaders(null);
+                this.headers = HEADERS;
             }
 
             @Override
@@ -154,11 +157,15 @@ public class LoadGenerator extends MessageProducerSupport {
                 return headers;
             }
 
-            class TestMessageHeaders extends MessageHeaders {
-                public TestMessageHeaders(Map<String, Object> headers) {
-                    super(headers, ID_VALUE_NONE, -1L);
-                }
-            }
+        }
+
+    }
+
+    @SuppressWarnings("serial")
+    private static class TestMessageHeaders extends MessageHeaders {
+        public TestMessageHeaders(Map<String, Object> headers) {
+            super(headers, ID_VALUE_NONE, -1L);
         }
     }
+
 }
