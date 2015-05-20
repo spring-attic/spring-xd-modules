@@ -47,16 +47,16 @@ You can also get information about the available module options:
 xd:>module info --name source:videocap
 Information about source module 'videocap':
 
-  Option Name   Description                                              Default              Type
-  ------------  -------------------------------------------------------  -------------------  --------
-  pollingDelay  the delay(ms) between pollings                           0                    int
-  sourceUrl	the url of the video source, either from camera or file  <none>               String
-  outputType    how this module should emit messages it produces         <none>               MimeType
+  Option Name   Description                                              Default  Type
+  ------------  -------------------------------------------------------  -------  --------
+  pollingDelay  the delay(ms) between pollings                           0        int
+  sourceUrl     the url of the video source, either from camera or file  <none>   String
+  outputType    how this module should emit messages it produces         <none>   MimeType
 ```
 
 Now create and deploy a stream:
 
-	xd:>stream create videocapTest --definition "videocap --sourceUrl=rtsp://localhost:7654/sample | log" --deploy
+	xd:>stream create videocapTest --definition "videocap --sourceUrl=rtsp://CameraIP:7654/sample | log" --deploy
 
 
 You should see the output that indicates the log sink is receiving messages with byte array payload. Actually, each received byte array represents the binary of a JPEG-encoded image grabbed from the rtsp video stream. 
