@@ -16,6 +16,8 @@
 package org.springframework.xd.greenplum.gpfdist;
 
 import java.util.Date;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +35,7 @@ import org.springframework.xd.greenplum.support.RuntimeContext;
 
 import reactor.Environment;
 import reactor.core.processor.RingBufferProcessor;
+import reactor.core.support.NamedDaemonThreadFactory;
 import reactor.io.buffer.Buffer;
 
 import com.codahale.metrics.Meter;
@@ -61,16 +64,16 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 
 	private GPFDistServer gpfdistServer;
 
-	private TaskScheduler sqlTaskScheduler;
+	private final ExecutorService executorService = Executors.newSingleThreadExecutor(new NamedDaemonThreadFactory("gpfdist-load-control"));
 
 	private final TaskFuture taskFuture = new TaskFuture();
 
-	private int rateInterval = 0;
-	private Meter meter =  null;
-	private int meterCount = 0;
+	private int   rateInterval = 0;
+	private Meter meter        = null;
+	private int   meterCount   = 0;
 
 	public GPFDistMessageHandler(int port, int flushCount, int flushTime, int batchTimeout, int batchCount,
-			int batchPeriod, String delimiter) {
+	                             int batchPeriod, String delimiter) {
 		super();
 		this.port = port;
 		this.flushCount = flushCount;
@@ -85,9 +88,9 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 	protected void doWrite(Message<?> message) throws Exception {
 		Object payload = message.getPayload();
 		if (payload instanceof String) {
-			String data = (String)payload;
+			String data = (String) payload;
 			if (delimiter != null) {
-				processor.onNext(Buffer.wrap(data+delimiter));
+				processor.onNext(Buffer.wrap(data + delimiter));
 			} else {
 				processor.onNext(Buffer.wrap(data));
 			}
@@ -106,7 +109,7 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 	protected void onInit() throws Exception {
 		super.onInit();
 		Environment.initializeIfEmpty().assignErrorJournal();
-		processor = RingBufferProcessor.create(false);
+		processor = RingBufferProcessor.create("gpfdist-message-handler", 8192, false);
 	}
 
 	@Override
@@ -126,25 +129,30 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 			final RuntimeContext context = new RuntimeContext();
 			context.addLocation(NetworkUtils.getGPFDistUri(gpfdistServer.getLocalPort()));
 
-			sqlTaskScheduler.schedule((new FutureTask<Void>(new Runnable() {
+			executorService.execute(new Runnable() {
 				@Override
 				public void run() {
-					boolean taskValue = true;
+					boolean taskValue;
 					try {
-						while(!taskFuture.interrupted) {
+						while (!taskFuture.interrupted) {
 							try {
 								greenplumLoad.load(context);
+								taskValue = true;
 							} catch (Exception e) {
 								log.error("Error in load", e);
+								taskValue = false;
 							}
-							Thread.sleep(batchPeriod*1000);
+							if(batchPeriod != 0){
+								Thread.sleep(batchPeriod * 1000);
+							}
+							taskFuture.set(taskValue);
+							taskValue = false;
 						}
 					} catch (Exception e) {
-						taskValue = false;
+						taskFuture.set(false);
 					}
-					taskFuture.set(taskValue);
 				}
-			}, null)), new Date());
+			});
 
 		} else {
 			log.info("Skipping gpload tasks because greenplumLoad is not set");
@@ -172,10 +180,6 @@ public class GPFDistMessageHandler extends AbstractGPFDistMessageHandler {
 		} catch (Exception e) {
 			log.warn("Error shutting down protocol listener", e);
 		}
-	}
-
-	public void setSqlTaskScheduler(TaskScheduler sqlTaskScheduler) {
-		this.sqlTaskScheduler = sqlTaskScheduler;
 	}
 
 	public void setGreenplumLoad(GreenplumLoad greenplumLoad) {

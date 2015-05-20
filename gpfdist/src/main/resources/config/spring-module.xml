@@ -8,11 +8,6 @@
 		http://www.springframework.org/schema/integration
 		http://www.springframework.org/schema/integration/spring-integration.xsd">
 
-	<beans:bean id="sqlTaskScheduler" class="org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler">
-		<beans:property name="waitForTasksToCompleteOnShutdown" value="true" />
-		<beans:property name="awaitTerminationSeconds" value="${batchTimeout}" />
-	</beans:bean>
-
 	<channel id="input" />
 
 	<beans:bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
@@ -32,7 +27,6 @@
 		<beans:constructor-arg value="${delimiter}"/>
         <beans:property name="rateInterval" value="${rateInterval}" />
         <beans:property name="greenplumLoad" ref="greenplumLoad" />
-        <beans:property name="sqlTaskScheduler" ref="sqlTaskScheduler" />
 	</beans:bean>
 
     <beans:bean id="greenplumControlFile" class="org.springframework.xd.greenplum.support.ControlFileFactoryBean">
