@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/integration"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<channel id="output"/>
+
+	<inbound-channel-adapter auto-startup="false" channel="output"
+			ref="videoSource">
+		<poller fixed-delay="${pollingDelay}" />
+	</inbound-channel-adapter>
+	
+	<beans:bean id="videoSource" class="org.springframework.xd.videocap.VideocapChannelAdapter">
+    	<beans:constructor-arg value="${sourceUrl}" />
+	</beans:bean>
+
+</beans:beans>
