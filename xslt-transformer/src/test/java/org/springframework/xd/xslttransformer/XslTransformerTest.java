@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -23,7 +22,6 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.xd.xslttransformer.XsltTransformerModuleConfig;
 
 
 
@@ -55,10 +53,6 @@ public class XslTransformerTest {
 	@Test
 	public void test() {
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		Properties properties = new Properties();
-		properties.put("xslt","classpath:test.xsl");
-		context.getEnvironment().getPropertySources().addLast(new PropertiesPropertySource("options", properties));
-		context.getEnvironment().getPropertySources().addLast(new PropertiesPropertySource("props", properties));
 		context.register(TestConfiguration.class);
 		context.refresh();
 
@@ -85,6 +79,8 @@ public class XslTransformerTest {
 	@Configuration
 	@Import(XsltTransformerModuleConfig.class)
 	static class TestConfiguration {
+		
+		
 
 		final static String XSLT = "classpath:test.xsl";
 
@@ -93,6 +89,18 @@ public class XslTransformerTest {
 		public static String xslt()
 		{
 			return XSLT;
+		}
+		
+		@Bean
+		public static PropertySourcesPlaceholderConfigurer placeHolderConfigurer() {
+			PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer = new
+					PropertySourcesPlaceholderConfigurer();
+			Properties properties = new Properties();
+			properties.put("xslt","classpath:test.xsl");
+			
+
+			propertySourcesPlaceholderConfigurer.setProperties(properties);
+			return propertySourcesPlaceholderConfigurer;
 		}
 	}
 }
