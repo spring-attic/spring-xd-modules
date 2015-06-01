@@ -23,14 +23,14 @@ import org.springframework.xd.dirt.test.SingletonModuleRegistry;
 import org.springframework.xd.dirt.test.process.SingleNodeProcessingChain;
 import org.springframework.xd.module.ModuleType;
 import org.springframework.xd.test.RandomConfigurationSupport;
-import static org.junit.Assert.*;
+
 import static org.junit.Assert.assertEquals;
-import static org.springframework.xd.dirt.test.process.SingleNodeProcessingChainSupport.*;
+import static org.springframework.xd.dirt.test.process.SingleNodeProcessingChainSupport.chain;
 
 /**
  * @author David Turanski
  */
-public class HeaderEnricherIntegrationTest  {
+public class HeaderEnricherIntegrationTest {
 	private static SingleNodeApplication application;
 
 	private static int RECEIVE_TIMEOUT = 5000;
@@ -66,11 +66,11 @@ public class HeaderEnricherIntegrationTest  {
 		chain.sendPayload("hello");
 		Message<?> message = chain.receive(RECEIVE_TIMEOUT);
 		assertEquals("ello", message.getHeaders().get("bar"));
-		
+
 		chain.destroy();
 
 	}
-	
+
 	@Test
 	public void testMultipleHeaders() {
 		String streamName = "testMultipleHeaders";
@@ -90,9 +90,6 @@ public class HeaderEnricherIntegrationTest  {
 
 	}
 			
-
-	String headerValues = "{\"foo\":\"(payload+', world!').toUpperCase()\",\"bar\":\"payload.substring(1)\"}";
-
 	@Test
 	public void testLiteralNoSpace() {
 		String streamName = "testLiteralNoSpace";
