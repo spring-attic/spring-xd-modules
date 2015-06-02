@@ -82,14 +82,18 @@ This example uses a JSON Path expression to extract a field value in a JSON Payl
 
 ### Literal Strings with Embedded Spaces
 
-SpEL expects literals to be enclosed in single quotes. This is straight forward when the literal does not contain embedded spaces as in the `Multple Headers` example above. Embedded spaces works by encoding the Unicode escape sequence. The leading '\' must itself be escaped:
+SpEL expects literals to be enclosed in single quotes. This is straight forward when the literal does not contain embedded spaces as in the `Multple Headers` example above. Using embedded spaces requires either 
+wrapping the `headers` value in single quotes and escaping the single quote for the literal string
+
+	xd:>stream create t4 --definition "http | header-enricher --headers='{\"foo\":\"''this is a literal string''\"}' | log --expression=headers" --deploy
+
+or you can encode embedded spaces using the Unicode escape sequence (the leading '\' must itself be escaped):
 
     xd:>stream create t4 --definition "http | header-enricher --headers={\"foo\":\"'this\\u0020is\\u0020a\\u0020literal\\u0020string'\"} | log --expression=headers" --deploy
 
 ...    
 
-    2015-05-24T12:26:32-0400 1.2.0.SNAP INFO pool-31-thread-4 sink.t4 - {requestMethod=POST, foo=this is a literal string, User-Agent=Java/1.8.0_25, Host=localhost:9000, id=b8892a1b-57b1-de6e-71de-e30f84cd199a, Content-Length=5, contentType=text/plain;Charset=UTF-8, requestPath=/, timestamp=1432484792949}    
-
+    2015-05-24T12:26:32-0400 1.2.0.SNAP INFO pool-31-thread-4 sink.t4 - {requestMethod=POST, foo=this is a literal string, User-Agent=Java/1.8.0_25, Host=localhost:9000, id=b8892a1b-57b1-de6e-71de-e30f84cd199a, Content-Length=5, contentType=text/plain;Charset=UTF-8, requestPath=/, timestamp=1432484792949}
 
 
   
