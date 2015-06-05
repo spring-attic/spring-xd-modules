@@ -1,6 +1,7 @@
 /build/
 /bin/
 /lib/
+/.gradle/
 .DS_Store
 target
 bin

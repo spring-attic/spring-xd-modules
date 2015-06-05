@@ -1,25 +1,24 @@
-/*
-NOTE: This configuration is convenient for maintaining shared configuration across multiple projects in the samples repo. 
-If copying this example, it may be simpler to declare the  
-required configuration inline. 
-*/
 buildscript {
-   apply from: 'buildscript.gradle', 
-   to: buildscript
+    repositories {
+        maven { url "http://repo.spring.io/plugins-snapshot" }
+        maven { url 'http://repo.spring.io/plugins-release' }
+        maven { url "http://repo.spring.io/release" }
+        maven { url "http://repo.spring.io/milestone" }
+        maven { url "http://repo.spring.io/snapshot" }
+        jcenter()
+    }
+    dependencies {
+        classpath("org.springframework.xd:spring-xd-module-plugin:${springXdVersion}")
+    }
 }
 
-ext {
-    springXdVersion = '1.1.2.RELEASE'
-    hadoopVersion = '2.6.0'
-}
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'spring-xd-module'
 
-group = 'org.springframework.xd.xslttransformer'
+group = 'org.springframework.xd.modules'
 version = '1.0.0.BUILD-SNAPSHOT'
-
 description = "Spring XD XSLT Transformer module"
 
 sourceCompatibility = 1.7
@@ -34,16 +33,11 @@ repositories {
 }
 
 dependencies {
-    compile 'org.springframework.integration:spring-integration-java-dsl:1.0.0.RELEASE'
-    compile 'org.springframework.integration:spring-integration-xml:4.0.2.RELEASE'
-    compile 'org.springframework.ws:spring-xml:2.2.0.RELEASE'
-   
+    compile "org.springframework.integration:spring-integration-java-dsl:${springIntegrationDslVersion}"
+    compile "org.springframework.integration:spring-integration-xml:${springIntegrationVersion}"
+    compile "org.springframework.ws:spring-xml:${springWsVersion}"
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.12'
+    gradleVersion = '2.2'
 }
-
-group = 'org.springframework.xd.modules'
-version = '1.0.0.BUILD-SNAPSHOT'
-
