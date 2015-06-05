@@ -1,0 +1,102 @@
+description = 'Spring XD Cassandra Sink Module'
+
+buildscript {
+	repositories {
+		maven { url "http://repo.spring.io/plugins-snapshot" }
+		maven { url "http://repo.spring.io/release" }
+		maven { url "http://repo.spring.io/snapshot" }
+		maven { url "http://repo.spring.io/milestone" }
+	}
+	dependencies {
+		classpath("org.springframework.xd:spring-xd-module-plugin:$springXdVersion")
+	}
+}
+
+ext {
+	cassandraVersion = '2.1.5'
+	cassandraUnitVersion = '2.1.3.1'
+	springIntegrationCassandraVersion = '0.5.0.RELEASE'
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply from: "${rootProject.projectDir}/maven.gradle"
+apply plugin: 'spring-xd-module'
+
+
+group = 'org.springframework.xd'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+repositories {
+	maven { url "http://repo.spring.io/release" }
+	jcenter()
+	maven { url "http://repo.spring.io/snapshot" }
+	maven { url "http://repo.spring.io/milestone" }
+}
+
+dependencies {
+	compile "org.springframework.integration:spring-integration-cassandra:$springIntegrationCassandraVersion"
+
+	testCompile("org.cassandraunit:cassandra-unit-spring:$cassandraUnitVersion") {
+		exclude group: 'org.apache.cassandra', module: 'cassandra-all'
+		exclude group: 'com.datastax.cassandra', module: 'cassandra-driver-core'
+		exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+	}
+
+	testCompile("org.apache.cassandra:cassandra-all:$cassandraVersion")
+
+}
+
+test {
+	// suppress all console output during testing unless running `gradle -i`
+	logging.captureStandardOutput(LogLevel.INFO)
+}
+
+//create a domain model Jar (entities)
+task entitiesJar(type: Jar) {
+	baseName = project.name + '-entities'
+	from sourceSets.test.output
+	include('**/test/domain/')
+	includeEmptyDirs = false
+	into "$buildDir/dist/put-into-xd-lib"
+}
+
+task dbScripts(type: Copy) {
+	from 'src/test/resources'
+	include '**/*.cql'
+	into "$buildDir/dist/put-into-xd-config"
+}
+
+task copyUberJar(type: Copy, dependsOn: jar) {
+	from jar.outputs
+	into "$buildDir/dist/deploy-to-xd"
+	rename { fileName ->
+		fileName.replace('.jar', '-uber.jar')
+	}
+}
+
+task copyOriginalJar(type: Copy, dependsOn: copyUberJar) {
+	from "$buildDir/libs"
+	include '*jar.original'
+	into "$buildDir/dist/deploy-to-xd"
+	rename { fileName ->
+		fileName.replace('.jar.original', '-original.jar')
+	}
+}
+
+task copyDependencies(type: Copy) {
+	from configurations.compile - configurations.provided
+	exclude 'spring-integration-core*'
+	into "$buildDir/dist/put-into-xd-lib"
+}
+
+build.dependsOn entitiesJar, dbScripts, copyDependencies, copyOriginalJar
+
+task wrapper(type: Wrapper) {
+	description = 'Generates gradlew[.bat] scripts'
+	gradleVersion = '2.2'
+	distributionUrl = "http://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
+}

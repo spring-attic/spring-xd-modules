@@ -1,13 +1,8 @@
 /build/
 /bin/
 /lib/
-/.gradle/
 .DS_Store
-target
-bin
-build
 .gradle
-.springBeans
 *.iml
 *.ipr
 *.iws
@@ -17,5 +12,3 @@ build
 .settings
 .idea
 out
-data/jobs/xdjobrepo.properties
-data/jobs/xdjobrepo.script
