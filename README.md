@@ -19,11 +19,11 @@ Read the [Creating a Module](http://docs.spring.io/spring-xd/docs/current-SNAPSH
 
 ### Should I provide both Maven and Gradle builds?
 
-Note that many of the [Samples][] provide both Maven and Gradle builds, primarily for illustration purposes. Some of the contributions here have followed this patterb. If you feel strongly about offering users a choice, we will respect that, but it's not really necessary. You are free to choose your preferred build tool. If you do decide to provide both, just be aware that you and whoever reviews your project will need to verify both builds are identically configured, complete successfully, and the jar contents produced by each are identical.
+Note that many of the [Samples][] provide both Maven and Gradle builds, primarily for illustration purposes. Some of the contributions here have followed this pattern. If you feel strongly about offering users a choice, we will respect that, but it's not really necessary. You are free to choose your preferred build tool. If you do decide to provide both, just be aware that you and whoever reviews your project will need to verify both builds are identically configured, complete successfully, and the jar contents produced by each are identical.
 
 ## Contributing to Spring XD
 
-If you would like to contribute to this repository, we encourage contributions through pull requests from [forks of this repository](http://help.github.com/forking/). If you want to contribute code this way, please familiarize yourself with the process outlined for contributing to Spring projects here: [Contributor Guidelines](https://github.com/SpringSource/spring-integration/wiki/Contributor-Guidelines).
+If you would like to contribute to this repository, we encourage contributions via pull requests from [forks of this repository](http://help.github.com/forking/). If you want to contribute code this way, please familiarize yourself with the process outlined for contributing to Spring projects here: [Contributor Guidelines](https://github.com/SpringSource/spring-integration/wiki/Contributor-Guidelines).
 
 Before we accept a non-trivial patch or pull request we will need you to sign the [contributor's agreement](https://support.springsource.com/spring_committer_signup). Signing the contributor's agreement does not grant anyone commit rights to the main repository, but it does mean that we can accept your contributions, and you will get an author credit if we do.  Active contributors might be asked to join the core team, and given the ability to merge pull requests.
 
