@@ -40,7 +40,7 @@ public class Book {
 
 	private Date saleDate;
 
-	private boolean isInStock;
+	private boolean inStock;
 
 	public Book() {
 	}
@@ -73,17 +73,17 @@ public class Book {
 	}
 
 	/**
-	 * @return Returns the isInStock.
+	 * @return Returns the inStock.
 	 */
 	public boolean isInStock() {
-		return isInStock;
+		return this.inStock;
 	}
 
 	/**
-	 * @param isInStock The isInStock to set.
+	 * @param inStock The isInStock to set.
 	 */
-	public void setInStock(boolean isInStock) {
-		this.isInStock = isInStock;
+	public void setInStock(boolean inStock) {
+		this.inStock = inStock;
 	}
 
 	/**

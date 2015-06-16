@@ -61,7 +61,39 @@ task entitiesJar(type: Jar) {
 	from sourceSets.test.output
 	include('**/test/domain/')
 	includeEmptyDirs = false
+	into "$buildDir/dist/put-into-xd-lib"
 }
+
+task dbScripts(type: Copy) {
+	from 'src/test/resources'
+	include '**/*.cql'
+	into "$buildDir/dist/put-into-xd-config"
+}
+
+task copyUberJar(type: Copy, dependsOn: jar) {
+	from jar.outputs
+	into "$buildDir/dist/deploy-to-xd"
+	rename { fileName ->
+		fileName.replace('.jar', '-uber.jar')
+	}
+}
+
+task copyOriginalJar(type: Copy, dependsOn: copyUberJar) {
+	from "$buildDir/libs"
+	include '*jar.original'
+	into "$buildDir/dist/deploy-to-xd"
+	rename { fileName ->
+		fileName.replace('.jar.original', '-original.jar')
+	}
+}
+
+task copyDependencies(type: Copy) {
+	from configurations.compile - configurations.provided
+	exclude 'spring-integration-core*'
+	into "$buildDir/dist/put-into-xd-lib"
+}
+
+build.dependsOn entitiesJar, dbScripts, copyDependencies, copyOriginalJar
 
 task wrapper(type: Wrapper) {
 	description = 'Generates gradlew[.bat] scripts'

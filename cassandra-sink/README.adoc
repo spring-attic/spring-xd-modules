@@ -43,7 +43,7 @@ as well as the [propdeps plugin](https://github.com/spring-projects/gradle-plugi
 
 ## Using this Custom Module
 
-The _uber-jar_ will be in `[project-build-dir]/modules.sink.cassandra-1.0.0.BUILD-SNAPSHOT.jar`.
+The _uber-jar_ will be in `[project-build-dir]/dist/deploy-to-xd/modules.sink.cassandra-1.0.0.BUILD-SNAPSHOT-uber.jar`.
 To install and register the module to your Spring XD distribution, use the `module upload` Spring XD shell command.
 Start Spring XD and the shell:
 
@@ -59,7 +59,7 @@ Start Spring XD and the shell:
 	eXtreme Data
 	1.2.0.BUILD-SNAPSHOT | Admin Server Target: http://localhost:9393
 	Welcome to the Spring XD shell. For assistance hit TAB or type "help".
-	xd:>module upload --file [project-build-dir]/modules.sink.cassandra-1.0.0.BUILD-SNAPSHOT.jar --name cassandra --type sink
+	xd:>module upload --file [project-build-dir]/dist/deploy-to-xd/modules.sink.cassandra-1.0.0.BUILD-SNAPSHOT-uber.jar	--name cassandra --type sink
 	Successfully uploaded module 'sink:cassandra'
 	xd:>
 
@@ -101,22 +101,20 @@ where `int-db.cql` looks like (for our case):
 
 [source,sql]
 ----
-CREATE TABLE IF NOT EXISTS book  (
+DROP TABLE IF EXISTS book;
+
+CREATE TABLE book  (
 	isbn    	uuid PRIMARY KEY,
 	author  	text,
+	instock 	boolean,
+	pages   	int,
+	saledate	timestamp,
 	title   	text
 );
-
 ----
 
-This file must be placed to the `xd/config`.
+This file is located in the `[project-build-dir]/dist/put-into-xd-config` must be placed to the `xd/config`.
 Any other resource pattern (`file:`, `http:` etc.) is valid to specify the path to the file.
-Alternatively you can place a jar with entities (domain classes with Spring Data Mapping annotations) to the `xd/lib`
-and specify `entityBasePackages` Cassandra Sink option to scan.
-
-Note: the jar with entities must be presented in the CLASSPATH even there is no need to populate schema, but entity
-`payload` is desired manner to operation through the Cassandra Sink.
-For example `... | transform --expression='new com.my.proj.Foo(...)' | cassandra --queryType=UPDATE`.
 
 And now let's send a data:
 
@@ -130,7 +128,7 @@ and check it in our local Cassandra with simple CQL:
 SELECT * FROM cassandratest.book;
 ----
 
-Another simple `INSERT` sample based on the domain entity:
+Another more tricky `INSERT` sample based on the domain entity:
 
 ```
 xd:>stream create cassandraTest2 --definition "http | transform --expression='new org.springframework.xd.test.domain.Book(T(java.util.UUID).randomUUID(), #jsonPath(payload, \"$.title\"), #jsonPath(payload, \"$.author\"))' | cassandra --keyspace=cassandraTest" --deploy
@@ -138,3 +136,8 @@ xd:>stream create cassandraTest2 --definition "http | transform --expression='ne
 http post --data "{\"title\": \"The Art of War\", \"author\": \"Sun Tzu\"}" --target http://localhost:9000
 
 ```
+
+To achieve this goal you must place everything from the `[project-build-dir]/dist/put-into-xd-lib/` (dependencies for
+the Cassandra Sink module and entities.jar) into `xd/lib` and restart Spring XD to allow `ClassLoader` to pick up the
+new jars.
+And deploy to the XD the module jar as `[project-build-dir]/dist/deploy-to-xd/modules.sink.cassandra-1.0.0.BUILD-SNAPSHOT-original.jar`

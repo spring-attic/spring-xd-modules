@@ -134,7 +134,7 @@ public class CassandraConnectionMixin {
 		return this.metricsEnabled;
 	}
 
-	@AssertFalse(message = "both 'username' and 'password' are required or no one")
+	@AssertFalse(message = "both 'username' and 'password' are required or neither one")
 	private boolean isInvalid() {
 		return StringUtils.hasText(this.username) ^ StringUtils.hasText(this.password);
 	}
