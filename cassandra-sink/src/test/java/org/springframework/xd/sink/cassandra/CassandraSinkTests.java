@@ -23,15 +23,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.cassandra.config.SchemaAction;
 import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.data.cassandra.core.CassandraTemplate;
+import org.springframework.integration.support.json.Jackson2JsonObjectMapper;
 import org.springframework.xd.dirt.server.singlenode.SingleNodeApplication;
 import org.springframework.xd.dirt.test.SingleNodeIntegrationTestSupport;
 import org.springframework.xd.dirt.test.SingletonModuleRegistry;
 import org.springframework.xd.dirt.test.process.SingleNodeProcessingChainProducer;
 import org.springframework.xd.dirt.test.process.SingleNodeProcessingChainSupport;
 import org.springframework.xd.module.ModuleType;
+import org.springframework.xd.test.RandomConfigurationSupport;
 import org.springframework.xd.test.domain.Book;
 
 import org.apache.cassandra.exceptions.ConfigurationException;
@@ -45,6 +46,8 @@ import org.junit.Test;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import reactor.fn.Supplier;
 
 /**
@@ -80,6 +83,8 @@ public class CassandraSinkTests {
 
 		cassandraTemplate = new CassandraTemplate(cluster.connect(STREAM_NAME));
 
+		new RandomConfigurationSupport();
+
 		application = new SingleNodeApplication().run();
 		SingleNodeIntegrationTestSupport integrationTest = new SingleNodeIntegrationTestSupport(application);
 		integrationTest.addModuleRegistry(new SingletonModuleRegistry(ModuleType.sink, MODULE_NAME));
@@ -94,16 +99,17 @@ public class CassandraSinkTests {
 	}
 
 	@Test
-	@Ignore("Looks like there is a CL issue with sending mapped entity to the XD stream")
+	@Ignore("Looks like there is a test CL issue with sending mapped entity to the XD stream. " +
+			"Works well when entities are in the main CL.")
 	public void testInsert() throws InterruptedException {
-		String stream = String.format("%s --port=%s --schemaAction=%s --entityBasePackages=%s",
-				MODULE_NAME, PORT, SchemaAction.RECREATE_DROP_UNUSED, Book.class.getPackage().getName());
+		String stream = String.format("%s --port=%s --entityBasePackages=%s",
+				MODULE_NAME, PORT, Book.class.getPackage().getName());
 
 		SingleNodeProcessingChainProducer chain =
 				SingleNodeProcessingChainSupport.chainProducer(application, STREAM_NAME, stream);
 
 		Book book = new Book();
-		book.setIsbn("123456-1");
+		book.setIsbn(UUID.randomUUID());
 		book.setTitle("Spring Integration Cassandra");
 		book.setAuthor("Cassandra Guru");
 		book.setPages(521);
@@ -128,32 +134,22 @@ public class CassandraSinkTests {
 	}
 
 	@Test
-	public void testIngestQuery() throws InterruptedException {
-		String stream = String.format("%s --port=%s --schemaAction=%s --entityBasePackages=%s --ingestQuery=\"%s\"",
-				MODULE_NAME, PORT, SchemaAction.RECREATE_DROP_UNUSED, Book.class.getPackage().getName(),
-				"insert into book (isbn, title, author, pages, saleDate, isInStock) values (?, ?, ?, ?, ?, ?)");
+	public void testIngestQuery() throws Exception {
+		String stream = String.format("%s --port=%s --initScript=%s --ingestQuery=\"%s\"",
+				MODULE_NAME, PORT, "int-db.cql",
+				"insert into book (isbn, title, author, pages, saleDate, inStock) values (?, ?, ?, ?, ?, ?)");
 
 		SingleNodeProcessingChainProducer chain =
 				SingleNodeProcessingChainSupport.chainProducer(application, STREAM_NAME, stream);
 
 		List<Book> books = getBookList(5);
 
-		List<List<?>> ingestBooks = new ArrayList<>(5);
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		Jackson2JsonObjectMapper mapper = new Jackson2JsonObjectMapper(objectMapper);
 
-		for (Book b : books) {
-			List<Object> l = new ArrayList<>(6);
 
-			l.add(b.getIsbn());
-			l.add(b.getTitle());
-			l.add(b.getAuthor());
-			l.add(b.getPages());
-			l.add(b.getSaleDate());
-			l.add(b.isInStock());
-
-			ingestBooks.add(l);
-		}
-
-		chain.sendPayload(ingestBooks);
+		chain.sendPayload(mapper.toJson(books));
 
 		final Select select = QueryBuilder.select().all().from("book");
 
@@ -178,7 +174,7 @@ public class CassandraSinkTests {
 		Book b;
 		for (int i = 0; i < numBooks; i++) {
 			b = new Book();
-			b.setIsbn(UUID.randomUUID().toString());
+			b.setIsbn(UUID.randomUUID());
 			b.setTitle("Spring XD Guide");
 			b.setAuthor("XD Guru");
 			b.setPages(i * 10 + 5);

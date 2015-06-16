@@ -17,3 +17,5 @@ build
 .settings
 .idea
 out
+data/jobs/xdjobrepo.properties
+data/jobs/xdjobrepo.script

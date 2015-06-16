@@ -16,13 +16,10 @@
 package org.springframework.xd.module.options.mixin;
 
 import javax.validation.constraints.AssertFalse;
-import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.cassandra.config.CassandraCqlClusterFactoryBean;
 import org.springframework.cassandra.config.CompressionType;
-import org.springframework.data.cassandra.config.SchemaAction;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.xd.module.options.spi.ModuleOption;
 import org.springframework.xd.module.options.spi.ModulePlaceholders;
@@ -45,7 +42,7 @@ public class CassandraConnectionMixin {
 
 	private String password;
 
-	private SchemaAction schemaAction = SchemaAction.NONE;
+	private String initScript;
 
 	private String[] entityBasePackages = new String[0];
 
@@ -78,9 +75,9 @@ public class CassandraConnectionMixin {
 		this.password = password;
 	}
 
-	@ModuleOption("the Cassandra schema action")
-	public void setSchemaAction(SchemaAction schemaAction) {
-		this.schemaAction = schemaAction;
+	@ModuleOption("the path to file with CQL scripts (delimited by ';') to initialize keyspace schema")
+	public void setInitScript(String initScript) {
+		this.initScript = initScript;
 	}
 
 	@ModuleOption("the base packages to scan for entities annotated with Table annotations")
@@ -120,9 +117,8 @@ public class CassandraConnectionMixin {
 		return this.password;
 	}
 
-	@NotNull
-	public SchemaAction getSchemaAction() {
-		return schemaAction;
+	public String getInitScript() {
+		return this.initScript;
 	}
 
 	public String[] getEntityBasePackages() {
@@ -139,13 +135,8 @@ public class CassandraConnectionMixin {
 	}
 
 	@AssertFalse(message = "both 'username' and 'password' are required or no one")
-	private boolean isValid() {
+	private boolean isInvalid() {
 		return StringUtils.hasText(this.username) ^ StringUtils.hasText(this.password);
-	}
-
-	@AssertTrue(message = "the entityBasePackages is required if schemaAction isn't NONE")
-	private boolean basePackageRequired() {
-		return SchemaAction.NONE == this.schemaAction || !ObjectUtils.isEmpty(this.entityBasePackages);
 	}
 
 }

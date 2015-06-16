@@ -15,7 +15,7 @@ buildscript {
 ext {
 	cassandraVersion = '2.1.5'
 	cassandraUnitVersion = '2.1.3.1'
-	springIntegrationCassandraVersion = '0.5.0.BUILD-SNAPSHOT'
+	springIntegrationCassandraVersion = '0.5.0.RELEASE'
 }
 
 apply plugin: 'java'
@@ -55,6 +55,13 @@ test {
 	logging.captureStandardOutput(LogLevel.INFO)
 }
 
+//create a domain model Jar (entities)
+task entitiesJar(type: Jar) {
+	baseName = project.name + '-entities'
+	from sourceSets.test.output
+	include('**/test/domain/')
+	includeEmptyDirs = false
+}
 
 task wrapper(type: Wrapper) {
 	description = 'Generates gradlew[.bat] scripts'

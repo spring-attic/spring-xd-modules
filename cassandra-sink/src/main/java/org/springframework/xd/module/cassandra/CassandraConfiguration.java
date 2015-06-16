@@ -15,22 +15,27 @@
 
 package org.springframework.xd.module.cassandra;
 
-import static org.springframework.cassandra.core.keyspace.CreateKeyspaceSpecification.createKeyspace;
-
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
+import javax.annotation.PostConstruct;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cassandra.config.CompressionType;
+import org.springframework.cassandra.core.CqlTemplate;
 import org.springframework.cassandra.core.keyspace.CreateKeyspaceSpecification;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
 import org.springframework.data.cassandra.config.SchemaAction;
 import org.springframework.data.cassandra.config.java.AbstractCassandraConfiguration;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import com.datastax.driver.core.AuthProvider;
 import com.datastax.driver.core.PlainTextAuthProvider;
+import com.datastax.driver.core.Session;
 
 /**
  * @author Artem Bilan
@@ -53,8 +58,8 @@ public class CassandraConfiguration extends AbstractCassandraConfiguration {
 	@Value("${password:}")
 	private String password;
 
-	@Value("${schemaAction}")
-	private SchemaAction schemaAction;
+	@Value("${initScript:}")
+	private Resource initScript;
 
 	@Value("${entityBasePackages}")
 	private String[] entityBasePackages;
@@ -64,6 +69,24 @@ public class CassandraConfiguration extends AbstractCassandraConfiguration {
 
 	@Value("${metricsEnabled}")
 	private boolean metricsEnabled;
+
+	@Autowired
+	private Session session;
+
+	@PostConstruct
+	public void init() throws IOException {
+		if (this.initScript != null) {
+			String scripts = new Scanner(this.initScript.getInputStream(), "UTF-8").useDelimiter("\\A").next();
+
+			CqlTemplate template = new CqlTemplate(this.session);
+
+			for (String script : StringUtils.delimitedListToStringArray(scripts, ";", "\r\n\f")) {
+				if (StringUtils.hasText(script)) { // an empty String after the last ';'
+					template.execute(script + ";");
+				}
+			}
+		}
+	}
 
 	@Override
 	protected String getContactPoints() {
@@ -92,7 +115,7 @@ public class CassandraConfiguration extends AbstractCassandraConfiguration {
 
 	@Override
 	public SchemaAction getSchemaAction() {
-		return this.schemaAction;
+		return !ObjectUtils.isEmpty(this.entityBasePackages) ? SchemaAction.CREATE : super.getSchemaAction();
 	}
 
 	@Override
@@ -112,15 +135,13 @@ public class CassandraConfiguration extends AbstractCassandraConfiguration {
 
 	@Override
 	protected List<CreateKeyspaceSpecification> getKeyspaceCreations() {
-		switch (this.schemaAction) {
-			case CREATE:
-			case RECREATE:
-			case RECREATE_DROP_UNUSED:
-				return Collections.singletonList(CreateKeyspaceSpecification.createKeyspace(getKeyspaceName())
-						.withSimpleReplication()
-						.ifNotExists());
-			default:
-				return super.getKeyspaceCreations();
+		if (ObjectUtils.isEmpty(this.entityBasePackages) || this.initScript != null) {
+			return Collections.singletonList(CreateKeyspaceSpecification.createKeyspace(getKeyspaceName())
+					.withSimpleReplication()
+					.ifNotExists());
+		}
+		else {
+			return super.getKeyspaceCreations();
 		}
 	}
 

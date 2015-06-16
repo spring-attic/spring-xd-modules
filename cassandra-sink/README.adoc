@@ -1,8 +1,15 @@
 Cassandra Sink Module
 ================================
 
-TBD
+The Cassandra is the most popular `Column Family` NoSQL Database and its premises is very suitable for Spring XD
+requirements, when we need big and fast ingest for our data.
 
+The Cassandra Sink Module purpose is to store and modify data to/in the Cassandra cluster throughout an XD Stream
+definition.
+It is based on the `CassandraMessageHandler` from
+[Spring Integration Cassandra](https://github.com/spring-projects/spring-integration-extensions/tree/master/spring-integration-cassandra)
+and Cassandra Connection configuration from the [Spring Data Cassandra](http://projects.spring.io/spring-data-cassandra/).
+Please, refer to those projects regarding more information about supported Cassandra Sink options.
 
 ## Requirements
 
@@ -36,7 +43,7 @@ as well as the [propdeps plugin](https://github.com/spring-projects/gradle-plugi
 
 ## Using this Custom Module
 
-The uber-jar will be in `[project-build-dir]/modules.sink.cassandra-1.0.0.BUILD-SNAPSHOT.jar`.
+The _uber-jar_ will be in `[project-build-dir]/modules.sink.cassandra-1.0.0.BUILD-SNAPSHOT.jar`.
 To install and register the module to your Spring XD distribution, use the `module upload` Spring XD shell command.
 Start Spring XD and the shell:
 
@@ -52,7 +59,7 @@ Start Spring XD and the shell:
 	eXtreme Data
 	1.2.0.BUILD-SNAPSHOT | Admin Server Target: http://localhost:9393
 	Welcome to the Spring XD shell. For assistance hit TAB or type "help".
-	xd:>module upload --file [path-to]/modules.sink.cassandra-1.0.0.BUILD-SNAPSHOT.jar --name cassandra --type sink
+	xd:>module upload --file [project-build-dir]/modules.sink.cassandra-1.0.0.BUILD-SNAPSHOT.jar --name cassandra --type sink
 	Successfully uploaded module 'sink:cassandra'
 	xd:>
 
@@ -63,13 +70,71 @@ You can also get information about the available module options:
 xd:>module info --name sink:cassandra
 Information about sink module 'cassandra':
 
-TBD
+Option Name          Description                                                                         Default                       Type
+-------------------  ----------------------------------------------------------------------------------  ----------------------------  ----------------
+compressionType      the compression to use for the transport                                            NONE                          CompressionType
+contactPoints        the comma-delimited string of the hosts to connect to Cassandra                     localhost                     String
+entityBasePackages   the base packages to scan for entities annotated with Table annotations             [Ljava.lang.String;@60380fb6  String[]
+initScript           the path to file with CQL scripts (delimited by ';') to initialize keyspace schema  <none>                        String
+keyspace             the keyspace name to connect to                                                     ${xd.stream.name}             String
+metricsEnabled       enable/disable metrics collection for the created cluster                           true                          boolean
+password             the password for connection                                                         <none>                        String
+port                 the port to use to connect to the Cassandra host                                    9042                          int
+username             the username for connection                                                         <none>                        String
+consistencyLevel     the consistencyLevel option of WriteOptions                                         <none>                        ConsistencyLevel
+ingestQuery          the ingest Cassandra query                                                          <none>                        String
+queryType            the queryType for Cassandra Sink                                                    INSERT                        Type
+retryPolicy          the retryPolicy  option of WriteOptions                                             <none>                        RetryPolicy
+statementExpression  the expression in Cassandra query DSL style                                         <none>                        String
+ttl                  the time-to-live option of WriteOptions                                             0                             int
+inputType            how this module should interpret messages it consumes                               <none>                        MimeType
 ```
 
-Now create and deploy a stream:
+
+Now create and deploy a stream with Cassandra schema population on start up:
 
 ```
-xd:>stream create cassandraTest --definition "load-generator --messageCount=10 --producers=5 --messageSize=1000 | cassandra " --deploy
+xd:>stream create cassandraTest --definition "http | cassandra --initScript=int-db.cql --ingestQuery='insert into book (isbn, title, author) values (uuid(), ?, ?)'" --deploy
 ```
 
-TBD
+where `int-db.cql` looks like (for our case):
+
+[source,sql]
+----
+CREATE TABLE IF NOT EXISTS book  (
+	isbn    	uuid PRIMARY KEY,
+	author  	text,
+	title   	text
+);
+
+----
+
+This file must be placed to the `xd/config`.
+Any other resource pattern (`file:`, `http:` etc.) is valid to specify the path to the file.
+Alternatively you can place a jar with entities (domain classes with Spring Data Mapping annotations) to the `xd/lib`
+and specify `entityBasePackages` Cassandra Sink option to scan.
+
+Note: the jar with entities must be presented in the CLASSPATH even there is no need to populate schema, but entity
+`payload` is desired manner to operation through the Cassandra Sink.
+For example `... | transform --expression='new com.my.proj.Foo(...)' | cassandra --queryType=UPDATE`.
+
+And now let's send a data:
+
+```
+xd:>http post --data "{\"title\": \"The Art of War\", \"author\": \"Sun Tzu\"}" --target http://localhost:9000
+```
+
+and check it in our local Cassandra with simple CQL:
+[source,sql]
+----
+SELECT * FROM cassandratest.book;
+----
+
+Another simple `INSERT` sample based on the domain entity:
+
+```
+xd:>stream create cassandraTest2 --definition "http | transform --expression='new org.springframework.xd.test.domain.Book(T(java.util.UUID).randomUUID(), #jsonPath(payload, \"$.title\"), #jsonPath(payload, \"$.author\"))' | cassandra --keyspace=cassandraTest" --deploy
+
+http post --data "{\"title\": \"The Art of War\", \"author\": \"Sun Tzu\"}" --target http://localhost:9000
+
+```

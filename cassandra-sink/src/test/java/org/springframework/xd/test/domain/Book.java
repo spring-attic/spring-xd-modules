@@ -17,8 +17,8 @@
 package org.springframework.xd.test.domain;
 
 import java.util.Date;
+import java.util.UUID;
 
-import org.springframework.data.annotation.AccessType;
 import org.springframework.data.cassandra.mapping.PrimaryKey;
 import org.springframework.data.cassandra.mapping.Table;
 
@@ -30,7 +30,7 @@ import org.springframework.data.cassandra.mapping.Table;
 public class Book {
 
 	@PrimaryKey
-	private String isbn;
+	private UUID isbn;
 
 	private String title;
 
@@ -42,10 +42,19 @@ public class Book {
 
 	private boolean isInStock;
 
+	public Book() {
+	}
+
+	public Book(UUID isbn, String title, String author) {
+		this.isbn = isbn;
+		this.title = title;
+		this.author = author;
+	}
+
 	/**
 	 * @return Returns the isbn.
 	 */
-	public String getIsbn() {
+	public UUID getIsbn() {
 		return isbn;
 	}
 
@@ -80,7 +89,7 @@ public class Book {
 	/**
 	 * @param isbn The isbn to set.
 	 */
-	public void setIsbn(String isbn) {
+	public void setIsbn(UUID isbn) {
 		this.isbn = isbn;
 	}
 

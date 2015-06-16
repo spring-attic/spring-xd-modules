@@ -15,7 +15,6 @@
 
 package org.springframework.xd.sink.cassandra;
 
-import javax.validation.constraints.AssertFalse;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -38,7 +37,7 @@ public class CassandraSinkOptionsMetaData {
 
 	private RetryPolicy retryPolicy;
 
-	private Integer ttl;
+	private int ttl;
 
 	private CassandraMessageHandler.Type queryType = CassandraMessageHandler.Type.INSERT;
 
@@ -57,11 +56,11 @@ public class CassandraSinkOptionsMetaData {
 	}
 
 	@ModuleOption("the time-to-live option of WriteOptions")
-	public void setTtl(Integer ttl) {
+	public void setTtl(int ttl) {
 		this.ttl = ttl;
 	}
 
-	@ModuleOption("the queryType for Cassandra Sink. Defaults to INSERT")
+	@ModuleOption("the queryType for Cassandra Sink")
 	public void setQueryType(CassandraMessageHandler.Type queryType) {
 		this.queryType = queryType;
 	}
@@ -85,7 +84,7 @@ public class CassandraSinkOptionsMetaData {
 	}
 
 	@Min(0)
-	public Integer getTtl() {
+	public int getTtl() {
 		return this.ttl;
 	}
 
@@ -103,7 +102,7 @@ public class CassandraSinkOptionsMetaData {
 	}
 
 	@AssertTrue(message = "'ingestQuery' and 'statementExpression' are mutually exclusive")
-	private boolean isValid() {
+	private boolean isInvalid() {
 		return !StringUtils.hasText(this.ingestQuery) || !StringUtils.hasText(this.statementExpression);
 	}
 
