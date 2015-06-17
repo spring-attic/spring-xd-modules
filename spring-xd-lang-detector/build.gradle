@@ -12,7 +12,7 @@ buildscript {
 }
 
 ext {
-    springXdVersion = '1.1.0.RELEASE'
+    springXdVersion = '1.2.0.RELEASE'
 }
 
 apply plugin: 'java'
