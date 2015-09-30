@@ -1,3 +1,6 @@
+NOTE: This module is included in the Spring XD 1.3.x distribution. The code will remain here for use with Spring XD 1.2.x installations until further notice.
+
+
 Header Enricher
 ===============
 
