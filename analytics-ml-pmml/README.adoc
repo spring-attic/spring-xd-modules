@@ -12,7 +12,7 @@ To build, clone this repository. Then cd to `analytics-ml-pmml` and type
 ./gradlew clean test bootRepackage
 ```
 
-To install this processor into Spring XD you will need to either copy the resulting jar to the registry at `$XD_HOME/modules/processor` or use the `module upload` command from the shell
+To install this processor into Spring XD you will need to either copy the resulting jar to the registry at `$XD_HOME/modules/processor/analytic-pmml.jar` or use the `module upload` command from the shell.
 
 
 == Module usage
