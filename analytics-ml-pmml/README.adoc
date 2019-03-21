@@ -3,7 +3,7 @@ Spring XD Analytics ML - PMML
 
 == Introduction
 This  XD processor provides support for real-time evaluation of various machine learning scoring algorithms.
-It is based on the https://github.com/jpmml/jpmml-evaluator[JPMML-Evaluator] library that provides support for a wide range of https://github.com/jpmml/jpmml-evaluator#features[model types] and is interoperable with models exported from http://www.r-project.org/[R], http://rattle.togaware.com/[Rattle], http://www.knime.org/[KNIME], and http://rapid-i.com/content/view/181/190/[RapidMiner].  The JPMML-Evaluator is http://www.gnu.org/licenses/agpl-3.0.html[AGPL] licenced.
+It is based on the https://github.com/jpmml/jpmml-evaluator[JPMML-Evaluator] library that provides support for a wide range of https://github.com/jpmml/jpmml-evaluator#features[model types] and is interoperable with models exported from https://www.r-project.org/[R], https://rattle.togaware.com/[Rattle], https://www.knime.org/[KNIME], and https://rapid-i.com/content/view/181/190/[RapidMiner].  The JPMML-Evaluator is https://www.gnu.org/licenses/agpl-3.0.html[AGPL] licenced.
 
 == Build and Install
 To build, clone this repository. Then cd to `analytics-ml-pmml` and type
