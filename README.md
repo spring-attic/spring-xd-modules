@@ -1,3 +1,5 @@
+# spring-xd-modules is no longer actively maintained by VMware, Inc.
+
 Spring XD Modules
 =================
 This repository contains modules - reusable components for building streams or jobs with [Spring XD](http://projects.spring.io/spring-xd/). The Spring XD distribution includes a number of ready to use  [modules out of the box](http://docs.spring.io/spring-xd/docs/current-SNAPSHOT/reference/html/#available-modules). This repository is intended to supplement the pre-packaged modules with contributions from the user community and the Spring XD team. 
