@@ -3,11 +3,11 @@ description = 'Spring XD Analytics ML - PMML Support'
 
 buildscript {
     repositories {
-        maven { url "http://repo.spring.io/plugins-snapshot" }
-        maven { url "http://repo.spring.io/release" }
+        maven { url "https://repo.spring.io/plugins-snapshot" }
+        maven { url "https://repo.spring.io/release" }
         jcenter()
-        maven { url "http://repo.spring.io/snapshot" }
-        maven { url "http://repo.spring.io/milestone" }
+        maven { url "https://repo.spring.io/snapshot" }
+        maven { url "https://repo.spring.io/milestone" }
     }
     dependencies {
         classpath("org.springframework.xd:spring-xd-module-plugin:${springXDVersion}")
@@ -35,10 +35,10 @@ sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
 repositories {
-    maven { url "http://repo.spring.io/release" }
+    maven { url "https://repo.spring.io/release" }
     jcenter()
-    maven { url "http://repo.spring.io/snapshot" }
-    maven { url "http://repo.spring.io/milestone" }
+    maven { url "https://repo.spring.io/snapshot" }
+    maven { url "https://repo.spring.io/milestone" }
 }
 
 dependencies {
