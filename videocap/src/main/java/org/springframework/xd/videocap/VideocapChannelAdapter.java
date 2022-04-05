@@ -1,18 +1,18 @@
 /*
-* Copyright 2011-2015 the original author or authors.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright 2011-2015 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.springframework.xd.videocap;
 
@@ -39,58 +39,75 @@ import org.springframework.util.Assert;
  */
 public class VideocapChannelAdapter implements MessageSource<byte[]>, InitializingBean, DisposableBean {
 
-	static {
-		OpenCV.loadLibrary();
-	}
+    static {
+        OpenCV.loadLibrary();
+    }
 
-	private final String sourceUrl;
+    private final String sourceUrl;
 
-	private VideoCapture capture;
+    private VideoCapture capture;
 
-	/**
-	 * Creates a new {@link VideocapChannelAdapter} from the given {@code sourceUrl}.
-	 * 
-	 * @param sourceUrl must not be {@literal null}.
-	 */
-	public VideocapChannelAdapter(String sourceUrl) {
+    /**
+     * Creates a new {@link VideocapChannelAdapter} from the given {@code sourceUrl}.
+     *
+     * @param sourceUrl must not be {@literal null}.
+     */
+    public VideocapChannelAdapter(String sourceUrl) {
 
-		Assert.notNull(sourceUrl, "SourceUrl must not be null!");
+        Assert.notNull(sourceUrl, "SourceUrl must not be null!");
 
-		this.sourceUrl = sourceUrl;
-	}
+        this.sourceUrl = sourceUrl;
+    }
 
-	@Override
-	public void afterPropertiesSet() throws Exception {
+    @Override
+    public void afterPropertiesSet() throws Exception {
 
-		capture = new VideoCapture(sourceUrl);
+        if(isNumeric(sourceUrl)) {
+            capture = new VideoCapture(Integer.parseInt(sourceUrl));
+        } else {
+            capture = new VideoCapture(sourceUrl);
+        }
 
-		Assert.isTrue(capture.isOpened(), "Can not access video source: " + sourceUrl);
-	}
+        Assert.isTrue(capture.isOpened(), "Can not access video source: " + sourceUrl);
+    }
 
-	@Override
-	public void destroy() throws Exception {
+    @Override
+    public void destroy() throws Exception {
 
-		if (capture == null) {
-			return;
-		}
+        if (capture == null) {
+            return;
+        }
 
-		if (capture.isOpened()) {
-			capture.release();
-		}
-	}
+        if (capture.isOpened()) {
+            capture.release();
+        }
+    }
 
-	@Override
-	public Message<byte[]> receive() {
+    @Override
+    public Message<byte[]> receive() {
 
-		Mat image = new Mat();
-		if (!capture.read(image)) {
-			return null;
-		}
+        Mat image = new Mat();
+        if (!capture.read(image)) {
+            return null;
+        }
 
-		MatOfByte mob = new MatOfByte();
-		Highgui.imencode(".jpeg", image, mob);
-		byte[] content = mob.toArray();
+        MatOfByte mob = new MatOfByte();
+        Highgui.imencode(".jpeg", image, mob);
+        byte[] content = mob.toArray();
 
-		return MessageBuilder.withPayload(content).build();
-	}
+        return MessageBuilder.withPayload(content).build();
+    }
+
+    public static boolean isNumeric(String str)
+    {
+        try
+            {
+                double d = Double.parseDouble(str);
+            }
+        catch(NumberFormatException nfe)
+            {
+                return false;
+            }
+        return true;
+    }
 }
