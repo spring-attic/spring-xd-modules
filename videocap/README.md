@@ -9,13 +9,13 @@ The main use case is to allow to ingest and decode video data into a sequence of
 
 In order to install the module and run it in your Spring XD installation, you will need to have installed:
 
-* Spring XD version 1.1.x or later ([Instructions](http://docs.spring.io/spring-xd/docs/current/reference/html/#getting-started))
+* Spring XD version 1.1.x or later ([Instructions](https://docs.spring.io/spring-xd/docs/current/reference/html/#getting-started))
 
 ## Building with Gradle
 
 	$./gradlew clean test bootRepackage
 
-This videocap source module depends on the open source computer vision library [opencv](http://opencv.org).
+This videocap source module depends on the open source computer vision library [opencv](https://opencv.org).
 The version of this source module is built upon and tested against is 2.4.9-4. 
 
 For this project, you need to install the opencv Java API support `opencv-2.4.9-4.jar` to the folder `[XD_HOME]/lib` on each xd-container host for this videocap module to work correctly. This is necessary to avoid loading the native opencv library twice into the JVM process. Note that all native libraries are included in the jar and will be extracted automatically if necessary.

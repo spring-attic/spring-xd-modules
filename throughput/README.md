@@ -9,19 +9,19 @@ types.
 
 In order to install the module and run it in your Spring XD installation, you will need to have installed:
 
-* Spring XD version 1.1.x ([Instructions](http://docs.spring.io/spring-xd/docs/current/reference/html/#getting-started))
+* Spring XD version 1.1.x ([Instructions](https://docs.spring.io/spring-xd/docs/current/reference/html/#getting-started))
 
 ## Building with Maven
 
 	$ mvn package
 
-The project's [pom](pom.xml) declares `spring-xd-module-parent` as its parent. This adds the dependencies needed to test the module and also configures the [Spring Boot Maven Plugin](http://docs.spring.io/spring-boot/docs/current/reference/html/build-tool-plugins-maven-plugin.html) to package the module as an uber-jar, packaging any dependencies that are not already provided by the Spring XD container. See the [Modules](http://docs.spring.io/spring-xd/docs/current/reference/html/#modules) section in the Spring XD Reference for a more detailed explanation of module class loading.
+The project's [pom](pom.xml) declares `spring-xd-module-parent` as its parent. This adds the dependencies needed to test the module and also configures the [Spring Boot Maven Plugin](https://docs.spring.io/spring-boot/docs/current/reference/html/build-tool-plugins-maven-plugin.html) to package the module as an uber-jar, packaging any dependencies that are not already provided by the Spring XD container. See the [Modules](https://docs.spring.io/spring-xd/docs/current/reference/html/#modules) section in the Spring XD Reference for a more detailed explanation of module class loading.
 
 ## Building with Gradle
 
 	$./gradlew build
 
-The project's [build.gradle](build.gradle) applies the `spring-xd-module` plugin, providing analagous build and packaging support for gradle. This plugin also applies the [Spring Boot Gradle Plugin](http://docs.spring.io/spring-boot/docs/current/reference/html/build-tool-plugins-gradle-plugin.html) as well as the [propdeps plugin](https://github.com/spring-projects/gradle-plugins/tree/master/propdeps-plugin). 
+The project's [build.gradle](build.gradle) applies the `spring-xd-module` plugin, providing analagous build and packaging support for gradle. This plugin also applies the [Spring Boot Gradle Plugin](https://docs.spring.io/spring-boot/docs/current/reference/html/build-tool-plugins-gradle-plugin.html) as well as the [propdeps plugin](https://github.com/spring-projects/gradle-plugins/tree/master/propdeps-plugin). 
 
 ## Using the Custom Module
 
